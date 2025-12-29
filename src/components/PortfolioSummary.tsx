@@ -47,10 +47,13 @@ export function PortfolioSummary({ assets, totalValueEUR, isMock = false, isBlur
     const [chartView, setChartView] = useState<"pie" | "bar">("pie");
 
     // Static conversion rates for UI smoothness
-    const rates = { EUR: 1, USD: 1.05, TRY: 38.5 };
-    const currencySymbols = { EUR: "€", USD: "$", TRY: "₺" };
+    const rates: Record<string, number> = { EUR: 1, USD: 1.05, TRY: 38.5, ORG: 1 };
+    const currencySymbols: Record<string, string> = { EUR: "€", USD: "$", TRY: "₺", ORG: "" };
 
-    const convert = (amount: number) => amount * rates[currency];
+    const convert = (amount: number) => {
+        const rate = rates[currency] || 1;
+        return amount * rate;
+    };
 
     // Derived Stats
     const totalReturnAmtEUR = isMock ? 1245.50 : (totalValueEUR * 0.12);
