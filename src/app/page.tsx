@@ -1,66 +1,62 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import { Navbar } from "@/components/Navbar";
+import { auth } from "@/auth";
+import { PortfolioSummary } from "@/components/PortfolioSummary";
+import { prisma } from "@/lib/prisma";
+import { getPortfolioMetrics } from "@/lib/portfolio";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
+  let displayAssets = [
+    { symbol: 'AAPL', type: 'STOCK', totalValueEUR: 15000 },
+    { symbol: 'BTC', type: 'CRYPTO', totalValueEUR: 12000 },
+    { symbol: 'XAU', type: 'GOLD', totalValueEUR: 8000 },
+    { symbol: 'GOOGL', type: 'STOCK', totalValueEUR: 7560.85 },
+  ];
+  let displayTotalValue = 42560.85;
+  let isMock = true;
+
+  if (session?.user?.email) {
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        portfolio: {
+          include: { assets: true }
+        }
+      }
+    });
+
+    if (user?.portfolio) {
+      const { totalValueEUR, assetsWithValues } = await getPortfolioMetrics(user.portfolio.assets);
+      if (assetsWithValues.length > 0) {
+        displayAssets = assetsWithValues;
+        displayTotalValue = totalValueEUR;
+        isMock = false;
+      }
+    }
+  }
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: '2rem' }}>
+      <CurrencyProvider>
+        <Navbar
+          username={session?.user?.name || undefined}
+          showPortfolioButton={true}
         />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '1rem', paddingTop: '1rem' }}>
+
+          {/* Visual Mockup Preview or Real Portfolio */}
+          <div style={{ width: '100%', maxWidth: '1200px' }}>
+            <PortfolioSummary
+              isMock={isMock}
+              totalValueEUR={displayTotalValue}
+              assets={displayAssets}
             />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
         </div>
-      </main>
+      </CurrencyProvider>
     </div>
   );
 }

@@ -1,0 +1,1474 @@
+"use client";
+
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useCurrency } from "@/context/CurrencyContext";
+import { useRouter } from "next/navigation"; // Added router
+import { InlineAssetSearch } from "./InlineAssetSearch";
+import { deleteAsset, updateAsset } from "@/lib/actions"; // Added updateAsset
+import { UnifiedPortfolioSummary, AllocationCard } from "./PortfolioSidebarComponents";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    rectSortingStrategy,
+    useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { ASSET_COLORS } from "@/lib/constants";
+import { getLogoUrl } from "@/lib/logos";
+const TIME_PERIODS = ["1D", "1W", "1M", "YTD", "1Y", "ALL"];
+import { Bitcoin, Wallet, TrendingUp, PieChart, Gem, Coins, Layers, LayoutGrid, List, Save, X, Trash2, Settings, LayoutTemplate, Grid } from "lucide-react";
+import { DetailedAssetCard } from "./DetailedAssetCard";
+import { getCompanyName } from "@/lib/companyNames";
+import { formatEUR, formatNumber } from "@/lib/formatters";
+import { RATES, getRate, getCurrencySymbol } from "@/lib/currency";
+
+interface DashboardProps {
+    username: string;
+    isOwner: boolean;
+    totalValueEUR: number;
+    assets: AssetDisplay[];
+    isBlurred: boolean;
+}
+
+// European number format removed (Imported)
+// Company name mapping removed (Imported)
+
+// Logo mapping for common symbols
+// Systematic Logo Logic
+// Local getLogoUrl removed. Imported from @/lib/logos.
+
+const AssetLogo = ({ symbol, logoUrl, size = '3.5rem' }: { symbol: string, logoUrl?: string | null, size?: string }) => {
+    const [error, setError] = useState(false);
+
+    // Reset error if logoUrl changes
+    useEffect(() => { setError(false); }, [logoUrl]);
+
+    const logoStyle: React.CSSProperties = {
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        objectFit: 'contain', // Changed to contain to avoid cropping text-based logos
+        background: 'var(--glass-shine)',
+        border: '1px solid var(--glass-border)',
+        overflow: 'hidden',
+        flexShrink: 0 // Prevent shrinking in flex containers
+    };
+
+    if (logoUrl && !error) {
+        return (
+            <div style={logoStyle}>
+                <img
+                    src={logoUrl}
+                    alt={symbol}
+                    onError={() => setError(true)}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+            </div>
+        )
+    }
+
+    return (
+        <div style={{
+            ...logoStyle,
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(236, 72, 153, 0.4))',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: size === '2rem' ? '0.8rem' : '1.2rem',
+            fontWeight: 800,
+            color: 'var(--text-primary)',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+        }}>
+            {symbol.charAt(0)}
+        </div>
+    );
+}
+
+import { AssetDisplay } from "@/lib/types";
+import { SortableAssetRow, SortableGroup, SortableAssetCard } from "./SortableWrappers";
+
+// Local Sortable Wrappers removed (Imported)
+
+// Component for a single row in the data table (List View)
+function AssetTableRow({
+    asset,
+    positionsViewCurrency,
+    totalPortfolioValueEUR,
+    isOwner,
+    onDelete,
+    timeFactor
+}: {
+    asset: AssetDisplay,
+    positionsViewCurrency: string,
+    totalPortfolioValueEUR: number,
+    isOwner: boolean,
+    onDelete: (id: string) => void,
+    timeFactor: number
+}) {
+    const router = useRouter();
+    const [isEditing, setIsEditing] = useState(false);
+    const [editQty, setEditQty] = useState(asset.quantity);
+    const [editCost, setEditCost] = useState(asset.buyPrice);
+    const [isSaving, setIsSaving] = useState(false);
+    const [justUpdated, setJustUpdated] = useState(false);
+
+    // Calculate Conversion Rate
+    // Calculate Conversion Rate
+    let displayCurrency = positionsViewCurrency === 'ORG' ? asset.currency : positionsViewCurrency;
+    const rate = positionsViewCurrency === 'ORG' ? 1 : getRate(asset.currency, displayCurrency);
+    const currencySymbol = getCurrencySymbol(displayCurrency);
+
+
+
+    const displayPrice = asset.currentPrice * rate;
+    const displayAvgPrice = asset.buyPrice * rate;
+    const displayTotalValue = (asset.currentPrice * asset.quantity) * rate;
+    const displayCostBasis = (asset.buyPrice * asset.quantity) * rate;
+
+    // Total P&L
+    const totalProfitVal = displayTotalValue - displayCostBasis;
+    const totalProfitPct = asset.plPercentage;
+
+    // Daily P&L (Simulated with a smaller mock factor if not available, or just use 1D factor)
+    // For now, let's assume "Daily" is 1D factor * profit if we don't have real daily change.
+    const dailyProfitVal = totalProfitVal * 0.05; // 5% mock of total for "Daily" if no real data
+    const dailyProfitPct = totalProfitPct * 0.05;
+
+    const isTotalProfit = totalProfitVal >= 0;
+    const isDailyProfit = dailyProfitVal >= 0;
+
+    const fmt = (val: number, min = 2, max = 2) =>
+        new Intl.NumberFormat('en-US', { minimumFractionDigits: min, maximumFractionDigits: max }).format(val || 0);
+
+    const handleSave = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isSaving) return;
+        setIsSaving(true);
+        const res = await updateAsset(asset.id, { quantity: Number(editQty), buyPrice: Number(editCost) });
+        if (res.error) {
+            alert(res.error);
+            setIsSaving(false);
+        } else {
+            setIsEditing(false);
+            setJustUpdated(true);
+            router.refresh();
+            setTimeout(() => setJustUpdated(false), 2000);
+            setIsSaving(false);
+        }
+    };
+
+    const logoUrl = getLogoUrl(asset.symbol, asset.type, asset.exchange);
+    const companyName = getCompanyName(asset.symbol, asset.type, asset.name);
+
+    return (
+        <div
+            style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(220px, 1.8fr) 1fr 1fr 1fr 1.2fr 1.2fr 50px',
+                padding: '0.6rem 1rem',
+                borderBottom: '1px solid rgba(255,255,255,0.02)',
+                alignItems: 'center',
+                transition: 'all 0.3s ease',
+                background: justUpdated ? 'rgba(16, 185, 129, 0.1)' : isEditing ? 'rgba(245, 158, 11, 0.05)' : 'transparent'
+            }}
+            className="table-row-hover"
+        >
+            {/* Asset Column */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
+                <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size="2rem" />
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                    <span style={{
+                        fontSize: '0.85rem',
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                    }}>
+                        {companyName}
+                    </span>
+                    <span style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>{asset.symbol}</span>
+                </div>
+            </div>
+
+            {/* Price Column */}
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{currencySymbol}{fmt(displayPrice)}</span>
+                {isEditing ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '2px' }}>
+                        <input
+                            type="number"
+                            value={editCost}
+                            onChange={(e) => setEditCost(Number(e.target.value))}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                                width: '60px',
+                                background: 'var(--glass-shine)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '3px',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.7rem',
+                                padding: '2px 4px',
+                                textAlign: 'right'
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>{currencySymbol}{fmt(displayAvgPrice)}</span>
+                )}
+            </div>
+
+            {/* Holdings Column */}
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                {isEditing ? (
+                    <input
+                        type="number"
+                        value={editQty}
+                        onChange={(e) => setEditQty(Number(e.target.value))}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            width: '80px',
+                            background: 'var(--glass-shine)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '3px',
+                            color: 'var(--text-primary)',
+                            fontSize: '0.85rem',
+                            padding: '4px 8px',
+                            textAlign: 'right',
+                            marginLeft: 'auto'
+                        }}
+                    />
+                ) : (
+                    <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{asset.quantity.toLocaleString()}</span>
+                )}
+            </div>
+
+            {/* Value Column */}
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(displayTotalValue, 0, 0)}</span>
+                <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>Total</span>
+            </div>
+
+            {/* Daily P&L Column */}
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isDailyProfit ? '#10b981' : '#ef4444' }}>
+                    {isDailyProfit ? '+' : ''}{currencySymbol}{fmt(dailyProfitVal, 0, 0)}
+                </span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isDailyProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
+                    {isDailyProfit ? '▲' : '▼'}{fmt(dailyProfitPct)}%
+                </span>
+            </div>
+
+            {/* Total P&L Column */}
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isTotalProfit ? '#10b981' : '#ef4444' }}>
+                    {isTotalProfit ? '+' : ''}{currencySymbol}{fmt(totalProfitVal, 0, 0)}
+                </span>
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isTotalProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
+                    {isTotalProfit ? '▲' : '▼'}{fmt(totalProfitPct)}%
+                </span>
+            </div>
+
+            {/* Actions Column */}
+            <div style={{ textAlign: 'right' }}>
+                {isOwner && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
+                        {isEditing ? (
+                            <>
+                                <button
+                                    onClick={handleSave}
+                                    style={{
+                                        background: 'none', border: 'none',
+                                        color: '#10b981', cursor: 'pointer', padding: '0.4rem',
+                                        borderRadius: '0.3rem'
+                                    }}
+                                    title="Save changes"
+                                >
+                                    {isSaving ? "..." : <Save size={14} />}
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setIsEditing(false); }}
+                                    style={{
+                                        background: 'none', border: 'none',
+                                        color: '#ef4444', cursor: 'pointer', padding: '0.4rem',
+                                        borderRadius: '0.3rem'
+                                    }}
+                                    title="Cancel"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                                style={{
+                                    background: 'none', border: 'none',
+                                    color: 'var(--text-muted)',
+                                    cursor: 'pointer', padding: '0.4rem',
+                                    transition: 'all 0.2s',
+                                    borderRadius: '0.3rem'
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; e.currentTarget.style.background = 'none'; }}
+                                title="Edit Asset"
+                            >
+                                <Settings size={14} />
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// Reusable Asset Card Component
+function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlurred, isOwner, onDelete, timeFactor, rank }: {
+    asset: AssetDisplay,
+    positionsViewCurrency: string,
+    totalPortfolioValueEUR: number,
+    isBlurred: boolean,
+    isOwner: boolean,
+    onDelete: (id: string) => void,
+    timeFactor: number
+}) {
+    const router = useRouter(); // Initialize router
+
+    // Edit State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editQty, setEditQty] = useState(asset.quantity);
+    const [editCost, setEditCost] = useState(asset.buyPrice);
+    const [isSaving, setIsSaving] = useState(false);
+    const [justUpdated, setJustUpdated] = useState(false); // New state for flash effect
+
+    // Currency Conversion Logic
+    // Base is EUR (asset.totalValueEUR) or Native (for Original)
+    // Rates (approximate to match List View)
+    const RATES: Record<string, number> = { EUR: 1, USD: 1.09, TRY: 37.5 };
+
+    let displayCurrency = positionsViewCurrency === 'ORG' ? asset.currency : positionsViewCurrency;
+    const currencySymbol = getCurrencySymbol(displayCurrency);
+
+    // Calculate Values in Display Currency
+    let totalVal = 0;
+    let totalCost = 0;
+    let unitPrice = 0;
+    let unitCost = 0;
+
+    if (positionsViewCurrency === 'ORG') {
+        totalVal = asset.currentPrice * asset.quantity;
+        totalCost = asset.buyPrice * asset.quantity;
+        unitPrice = asset.currentPrice;
+        unitCost = asset.buyPrice;
+    } else {
+        const targetRate = getRate('EUR', displayCurrency);
+        totalVal = asset.totalValueEUR * targetRate;
+        const costEUR = asset.totalValueEUR / (1 + asset.plPercentage / 100);
+        totalCost = costEUR * targetRate;
+
+        // Unit values in target currency
+        unitPrice = (asset.totalValueEUR / asset.quantity) * targetRate;
+        unitCost = (costEUR / asset.quantity) * targetRate;
+    }
+
+    const profit = totalVal - totalCost;
+    const profitPct = asset.plPercentage;
+
+    // Weight Calculation
+    const weight = totalPortfolioValueEUR > 0 ? (asset.totalValueEUR / totalPortfolioValueEUR) * 100 : 0;
+
+    const periodProfitVal = profit * timeFactor;
+    const periodProfitPctVal = profitPct * timeFactor;
+
+    const logoUrl = getLogoUrl(asset.symbol, asset.type, asset.exchange, asset.country);
+    const companyName = getCompanyName(asset.symbol, asset.type, asset.name);
+    const fmt = (n: number) => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    const handleSave = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isSaving) return;
+        setIsSaving(true);
+
+        const res = await updateAsset(asset.id, { quantity: Number(editQty), buyPrice: Number(editCost) });
+        if (res.error) {
+            alert(res.error);
+            setIsSaving(false);
+        } else {
+            setIsEditing(false);
+            setJustUpdated(true);
+            router.refresh(); // Soft refresh
+            setTimeout(() => setJustUpdated(false), 2000); // 2s flash
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div
+            className="glass-panel"
+            style={{
+                padding: '0', // Full bleed internal padding handled by sections
+                borderRadius: '0.6rem',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                transition: 'all 0.3s ease',
+                border: `1px solid ${ASSET_COLORS[asset.type] || ASSET_COLORS['DEFAULT']}`,
+                // Highlight if just updated (Green) or Editing (Amber)
+                borderColor: justUpdated ? '#10b981' : isEditing ? '#f59e0b' : (ASSET_COLORS[asset.type] || ASSET_COLORS['DEFAULT']) + '60',
+                filter: isBlurred ? 'blur(8px)' : 'none',
+                overflow: 'hidden',
+                height: '100%',
+                boxShadow: justUpdated ? '0 0 20px rgba(16, 185, 129, 0.4)' : isEditing ? '0 0 15px rgba(245, 158, 11, 0.2)' : 'none',
+
+            }}
+        >
+            {/* SECTION 1: HEADER (Logo + Name/Settings) */}
+            <div style={{ display: 'flex', padding: '0.6rem', borderBottom: '1px solid var(--glass-border)', height: '5.5rem', position: 'relative' }}>
+                {/* Left: Logo */}
+                <div style={{ marginRight: '1rem' }}>
+                    <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} />
+                </div>
+
+                {/* Right: Info */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        {/* Fixed Height Title Container for Alignment */}
+                        <div style={{ fontSize: '1rem', fontWeight: 800, lineHeight: 1.2, color: 'var(--text-primary)', minHeight: '2.4em', display: 'flex', alignItems: 'center' }}>
+                            {companyName}
+                        </div>
+                        {/* Settings Icon (Toggles Edit Mode) */}
+                        {isOwner && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Stop DnD
+                                    setIsEditing(!isEditing);
+                                    // Reset edit values on open
+                                    if (!isEditing) {
+                                        setEditQty(asset.quantity);
+                                        setEditCost(asset.buyPrice);
+                                    }
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()} // Stop DnD start
+                                style={{
+                                    background: isEditing ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
+                                    border: 'none',
+                                    borderRadius: '0.3rem',
+                                    cursor: 'pointer',
+                                    opacity: isEditing ? 1 : 0.5,
+                                    padding: '0.2rem',
+                                    color: isEditing ? '#f59e0b' : 'inherit',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <Settings size={16} />
+                            </button>
+                        )}
+                    </div>
+                    {/* Subtitle / Asset Info */}
+                    {!isEditing && (
+                        <div style={{ fontSize: '0.75rem', fontWeight: 600, marginTop: '0.2rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                            {asset.type === 'CASH' ? (
+                                <>
+                                    <span style={{ color: 'var(--text-secondary)' }}>Cash</span>
+                                    <span style={{ opacity: 0.3 }}>|</span>
+                                    <span style={{ opacity: 0.6 }}>{asset.quantity.toLocaleString('de-DE')} {asset.symbol}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span style={{ color: 'var(--text-secondary)' }}>{asset.symbol}</span>
+                                    <span style={{ opacity: 0.3 }}>|</span>
+                                    <span style={{ opacity: 0.6 }}>{asset.quantity.toLocaleString('de-DE')} {asset.quantity === 1 ? 'Share' : 'Shares'}</span>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* SECTION 2: BODY (FINANCIALS OR EDIT FORM) */}
+            <div style={{ padding: '0.6rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
+
+                {isEditing ? (
+                    /* EDIT MODE FORM */
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%', justifyContent: 'space-between' }}>
+
+                        {/* Inputs Container */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {/* Shares Input */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                <label style={{ fontSize: '0.7rem', opacity: 0.7, fontWeight: 600 }}>Shares / Quantity</label>
+                                <input
+                                    type="number"
+                                    value={editQty}
+                                    onChange={(e) => setEditQty(e.target.value as any)}
+                                    onPointerDown={e => e.stopPropagation()}
+                                    style={{
+                                        background: 'rgba(0,0,0,0.3)',
+                                        border: '1px solid var(--glass-border)',
+                                        borderRadius: '0.3rem',
+                                        padding: '0.4rem',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '0.9rem',
+                                        width: '100%'
+                                    }}
+                                />
+                            </div>
+
+                            {/* Cost Input */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                <label style={{ fontSize: '0.7rem', opacity: 0.7, fontWeight: 600 }}>Avg. Cost ({asset.currency})</label>
+                                <input
+                                    type="number"
+                                    value={editCost}
+                                    onChange={(e) => setEditCost(e.target.value as any)}
+                                    onPointerDown={e => e.stopPropagation()}
+                                    style={{
+                                        background: 'rgba(0,0,0,0.3)',
+                                        border: '1px solid var(--glass-border)',
+                                        borderRadius: '0.3rem',
+                                        padding: '0.4rem',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '0.9rem',
+                                        width: '100%'
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Actions Footer */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem' }}>
+
+                            {/* Delete Button (Moved here) */}
+                            <button
+                                onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (confirm(`Are you sure you want to delete ${asset.symbol}?`)) {
+                                        onDelete(asset.id);
+                                    }
+                                }}
+                                onPointerDown={e => e.stopPropagation()}
+                                style={{
+                                    background: 'rgba(239, 68, 68, 0.15)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    borderRadius: '0.3rem',
+                                    padding: '0.4rem',
+                                    color: '#ef4444',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                                title="Delete Asset"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+
+                            {/* Save/Cancel Group */}
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsEditing(false);
+                                    }}
+                                    onPointerDown={e => e.stopPropagation()}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: '1px solid var(--glass-border)',
+                                        borderRadius: '0.3rem',
+                                        padding: '0.4rem 0.8rem',
+                                        cursor: 'pointer',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', gap: '0.2rem'
+                                    }}
+                                >
+                                    <X size={14} /> Cancel
+                                </button>
+                                <button
+                                    onClick={handleSave}
+                                    onPointerDown={e => e.stopPropagation()}
+                                    disabled={isSaving}
+                                    style={{
+                                        background: '#10b981',
+                                        border: 'none',
+                                        borderRadius: '0.3rem',
+                                        padding: '0.4rem 0.8rem',
+                                        cursor: isSaving ? 'wait' : 'pointer',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
+                                        color: '#000',
+                                        display: 'flex', alignItems: 'center', gap: '0.2rem'
+                                    }}
+                                >
+                                    <Save size={14} /> {isSaving ? 'Saving...' : 'Save'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    /* NORMAL VIEW MODE */
+                    <>
+                        {/* Row 1: Price & Cost */}
+                        <div style={{
+                            background: 'var(--glass-bg)',
+                            borderRadius: '0.4rem',
+                            padding: '0.4rem 0.5rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-end',
+                            margin: '0 -0.2rem'
+                        }}>
+                            <div>
+                                <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Cost</div>
+                                <div style={{ fontWeight: 700, opacity: 0.9, whiteSpace: 'nowrap' }}>
+                                    {currencySymbol} {asset.type === 'CASH' ? fmt(totalCost) : fmt(unitCost)}
+                                </div>
+                            </div>
+                            <div style={{ textAlign: 'center', opacity: 0.1, fontSize: '0.7rem' }}>|</div>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Price</div>
+                                <div style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                    {currencySymbol} {asset.type === 'CASH' ? fmt(totalVal) : fmt(unitPrice)}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sub-Section B: Total Data */}
+                        <div style={{
+                            background: 'var(--glass-bg)',
+                            borderRadius: '0.4rem',
+                            padding: '0.4rem 0.5rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-end',
+                            margin: '0 -0.2rem'
+                        }}>
+                            <div>
+                                <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Total Cost</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 800, opacity: 0.9, whiteSpace: 'nowrap' }}>{currencySymbol} {fmt(totalCost)}</div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Total Value</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{currencySymbol} {fmt(totalVal)}</div>
+                            </div>
+                        </div>
+
+                        {/* Sub-Section C: Footer (Weight | P/L) */}
+                        <div style={{
+                            background: periodProfitVal >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                            borderRadius: '0.4rem',
+                            padding: '0.4rem 0.6rem',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            border: periodProfitVal >= 0 ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                            marginTop: 'auto'
+                        }}>
+                            {/* Weight Column */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                <div style={{ fontSize: '0.6rem', opacity: 0.6, fontWeight: 600 }}>Weight</div>
+                                <div style={{ fontSize: '0.95rem', fontWeight: 800, opacity: 0.9 }}>{fmt(weight)}%</div>
+                            </div>
+
+                            {/* Profit Column (Stacked) */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: periodProfitVal >= 0 ? '#10b981' : '#ef4444' }}>
+                                    <span style={{ fontSize: '0.7rem', marginRight: '0.1rem' }}>{periodProfitVal >= 0 ? '▲' : '▼'}</span>
+                                    {fmt(Math.abs(periodProfitPctVal))}%
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: periodProfitVal >= 0 ? '#10b981' : '#ef4444', fontWeight: 600, opacity: 0.9 }}>
+                                    {periodProfitVal >= 0 ? '+' : ''}{currencySymbol} {fmt(Math.abs(periodProfitVal))}
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+
+
+const AssetGroupHeader = ({
+    type,
+    count,
+    totalEUR,
+    percentage,
+    currencySymbol,
+    rate,
+    fmt,
+    dragHandleProps
+}: {
+    type: string,
+    count: number,
+    totalEUR: number,
+    percentage: number,
+    currencySymbol: string,
+    rate: number,
+    fmt: (val: number) => string,
+    dragHandleProps?: any
+}) => {
+    // Icon Mapping
+    const getGroupIcon = (type: string) => {
+        const t = type.toUpperCase();
+        if (t.includes('CRYPTO')) return <Bitcoin size={16} />;
+        if (t.includes('STOCK')) return <TrendingUp size={16} />;
+        if (t.includes('CASH') || t.includes('FIAT')) return <Wallet size={16} />;
+        if (t.includes('ETF') || t.includes('FUND')) return <PieChart size={16} />;
+        if (t.includes('COMMODITY') || t.includes('GOLD')) return <Gem size={16} />;
+        if (t.includes('CURRENCY')) return <Coins size={16} />;
+        return <Layers size={16} />;
+    };
+
+    return (
+        <div
+            {...dragHandleProps}
+            style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '0.5rem 1rem',
+                background: 'var(--glass-bg)',
+                borderRadius: '0.6rem',
+                marginBottom: '0.4rem',
+                border: '1px solid rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(10px)',
+                cursor: dragHandleProps ? 'grab' : 'default'
+            }}
+        >
+            {/* Left Side: Group Info */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <div style={{
+                    width: '4px',
+                    height: '1.2rem',
+                    background: '#6366f1',
+                    borderRadius: '2px',
+                    boxShadow: '0 0 10px rgba(99, 102, 241, 0.5)'
+                }} />
+
+                {/* Icon Circle */}
+                <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: '1.6rem', height: '1.6rem',
+                    background: 'rgba(99, 102, 241, 0.15)',
+                    borderRadius: '50%',
+                    color: '#818cf8',
+                    border: '1px solid rgba(99, 102, 241, 0.2)'
+                }}>
+                    {getGroupIcon(type)}
+                </div>
+
+                <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>{type}</span>
+                <span style={{ fontSize: '0.7rem', opacity: 0.3, fontWeight: 600, background: 'var(--glass-shine)', padding: '1px 6px', borderRadius: '4px' }}>{count}</span>
+            </div>
+
+            {/* Right Side: Totals (Percent First, then Amount) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                    color: 'var(--text-primary)',
+                    background: 'rgba(255,255,255,0.1)',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '0.4rem'
+                }}>
+                    {percentage.toFixed(1)}%
+                </div>
+
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: '0.4rem',
+                    background: 'rgba(255,255,255,0.1)',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '0.4rem'
+                }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(totalEUR * rate)}</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// Actually simpler: Just accept the header props and grid children?
+// Or just let this component render the header and children.
+
+const AssetGroupGridWrapper = ({
+    header,
+    children,
+    dragHandleProps
+}: {
+    header: React.ReactNode,
+    children: React.ReactNode,
+    dragHandleProps?: any
+}) => {
+    return (
+        <div style={{ marginBottom: '1rem' }}>
+            {/* Inject drag handle into header */}
+            {React.isValidElement(header)
+                ? React.cloneElement(header as React.ReactElement<any>, { dragHandleProps })
+                : header}
+            {children}
+        </div>
+    );
+};
+
+function AssetGroup({
+    type,
+    assets,
+    totalEUR,
+    positionsViewCurrency,
+    totalPortfolioValueEUR,
+    isOwner,
+    onDelete,
+    timeFactor,
+    dragHandleProps
+}: {
+    type: string,
+    assets: AssetDisplay[],
+    totalEUR: number,
+    positionsViewCurrency: string,
+    totalPortfolioValueEUR: number,
+    isOwner: boolean,
+    onDelete: (id: string) => void,
+    timeFactor: number,
+    dragHandleProps?: any
+}) {
+    const RATES: Record<string, number> = { EUR: 1, USD: 1.09, TRY: 37.5 };
+    const rate = positionsViewCurrency === 'ORIGINAL' ? 1 : (RATES[positionsViewCurrency] || 1);
+    const displayCurrency = positionsViewCurrency === 'ORIGINAL' ? 'EUR' : positionsViewCurrency;
+    const currencySymbol = displayCurrency === 'EUR' ? '€' : displayCurrency === 'USD' ? '$' : displayCurrency === 'TRY' ? '₺' : '€';
+
+    const fmt = (val: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
+
+    return (
+        <div style={{ marginBottom: '1.5rem' }}>
+            <AssetGroupHeader
+                type={type}
+                count={assets?.length || 0}
+                totalEUR={totalEUR}
+                percentage={(totalEUR / (totalPortfolioValueEUR || 1)) * 100}
+                currencySymbol={currencySymbol}
+                rate={rate}
+                fmt={fmt}
+                dragHandleProps={dragHandleProps}
+            />
+
+            {/* Assets in Group */}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <SortableContext items={(assets || []).map(a => a.id)} strategy={verticalListSortingStrategy}>
+                    {(assets || []).map(asset => (
+                        <SortableAssetRow key={asset.id} id={asset.id}>
+                            <AssetTableRow
+                                asset={asset}
+                                positionsViewCurrency={positionsViewCurrency}
+                                totalPortfolioValueEUR={totalPortfolioValueEUR}
+                                isOwner={isOwner}
+                                onDelete={onDelete}
+                                timeFactor={timeFactor}
+                            />
+                        </SortableAssetRow>
+                    ))}
+                </SortableContext>
+            </div>
+        </div>
+    );
+}
+
+
+
+
+export default function Dashboard({ username, isOwner, totalValueEUR, assets, isBlurred }: DashboardProps) {
+    // Initialize items with default sort (Weight Descending)
+    const [items, setItems] = useState<AssetDisplay[]>([]);
+    const [orderedGroups, setOrderedGroups] = useState<string[]>([]);
+    const [isGroupingEnabled, setIsGroupingEnabled] = useState(false);
+    const [viewMode, setViewMode] = useState<"list" | "grid" | "detailed">("list");
+    const [gridColumns, setGridColumns] = useState<1 | 2>(2);
+    const [timePeriod, setTimePeriod] = useState("ALL");
+    const { currency: globalCurrency } = useCurrency();
+    const positionsViewCurrency = globalCurrency;
+
+    // Update items when assets prop changes (initial load or refetch)
+    useEffect(() => {
+        const sorted = [...assets].sort((a, b) => b.totalValueEUR - a.totalValueEUR);
+        setItems(sorted);
+    }, [assets]);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8, // Require 8px movement to start drag (prevents accidental drags on clicks)
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    // Filter states
+    const [activeFilterCategory, setActiveFilterCategory] = useState<string | null>(null);
+    const [typeFilter, setTypeFilter] = useState<string | null>(null);
+    const [exchangeFilter, setExchangeFilter] = useState<string | null>(null);
+    const [currencyFilter, setCurrencyFilter] = useState<string | null>(null);
+    const [countryFilter, setCountryFilter] = useState<string | null>(null);
+    const [sectorFilter, setSectorFilter] = useState<string | null>(null);
+    const [platformFilter, setPlatformFilter] = useState<string | null>(null);
+
+    // Filter assets
+    const filteredAssets = useMemo(() => {
+        return items.filter(asset => {
+            if (typeFilter && asset.type !== typeFilter) return false;
+            if (exchangeFilter && asset.exchange !== exchangeFilter) return false;
+            if (currencyFilter && asset.currency !== currencyFilter) return false;
+            if (countryFilter && asset.country !== countryFilter) return false;
+            if (sectorFilter && asset.sector !== sectorFilter) return false;
+            if (platformFilter && asset.platform !== platformFilter) return false;
+            return true;
+        });
+    }, [items, typeFilter, exchangeFilter, currencyFilter, countryFilter, sectorFilter, platformFilter]);
+
+    // Memoize sorted assets
+    const sortedAssets = useMemo(() => {
+        // Assuming a sortConfig state exists or is defined elsewhere for sorting
+        // For now, let's use a default sort or assume `items` are already sorted if no explicit sortConfig is provided.
+        // If `sortConfig` is not defined, this will need to be adjusted.
+        // For the purpose of this edit, I'll assume a `sortConfig` exists or use a placeholder.
+        // Let's use the initial sort from `useEffect` for now if no `sortConfig` is available.
+        // If `sortConfig` is meant to be a state, it should be declared.
+        // For now, I'll use a placeholder sort that keeps the order from `filteredAssets`.
+        return [...filteredAssets].sort((a, b) => b.totalValueEUR - a.totalValueEUR); // Default sort by totalValueEUR descending
+    }, [filteredAssets]); // Add sortConfig to dependencies if it becomes a state
+
+    // Grouping Logic
+    const groupedAssets = useMemo(() => {
+        if (!isGroupingEnabled) return { 'All Assets': sortedAssets };
+
+        return sortedAssets.reduce((acc, asset) => {
+            const groupKey = asset.type || 'Other'; // Ensure a default group key
+            if (!acc[groupKey]) acc[groupKey] = [];
+            acc[groupKey].push(asset);
+            return acc;
+        }, {} as Record<string, AssetDisplay[]>);
+    }, [sortedAssets, isGroupingEnabled]);
+
+
+    const groupTotals = useMemo(() => {
+        const totals: Record<string, number> = {};
+        Object.keys(groupedAssets).forEach(type => {
+            totals[type] = groupedAssets[type].reduce((sum, a) => sum + a.totalValueEUR, 0);
+        });
+        return totals;
+    }, [groupedAssets]);
+
+    // Initial group order sorted by total value
+    useEffect(() => {
+        if (orderedGroups.length === 0 || Object.keys(groupTotals).length !== orderedGroups.length) {
+            const sortedGroups = Object.keys(groupTotals).sort((a, b) => groupTotals[b] - groupTotals[a]);
+            setOrderedGroups(sortedGroups);
+        }
+    }, [groupTotals, orderedGroups.length]);
+
+    function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event;
+        if (!over) return;
+
+        if (active.id.toString().startsWith('group:')) {
+            const oldGroup = active.id.toString().replace('group:', '');
+            const newGroup = over.id.toString().replace('group:', '');
+            const oldIndex = orderedGroups.indexOf(oldGroup);
+            const newIndex = orderedGroups.indexOf(newGroup);
+            if (oldIndex !== -1 && newIndex !== -1) {
+                setOrderedGroups(arrayMove(orderedGroups, oldIndex, newIndex));
+            }
+        } else if (active.id !== over.id) {
+            setItems((items) => {
+                const oldIndex = items.findIndex((item) => item.id === active.id);
+                const newIndex = items.findIndex((item) => item.id === over.id);
+                return arrayMove(items, oldIndex, newIndex);
+            });
+        }
+    }
+
+    const handleDelete = async (assetId: string) => {
+        if (confirm("Are you sure you want to delete this asset?")) {
+            await deleteAsset(assetId);
+            window.location.reload();
+        }
+    };
+
+
+
+    const isDragEnabled = !activeFilterCategory && !typeFilter && !exchangeFilter && !currencyFilter && !countryFilter && !sectorFilter && !platformFilter;
+
+    // Calculate time-based profit
+    const getTimeFactor = () => {
+        switch (timePeriod) {
+            case "1D": return 0.05;
+            case "1W": return 0.2;
+            case "1M": return 0.5;
+            case "YTD": return 0.7;
+            case "1Y": return 0.9;
+            default: return 1;
+        }
+    };
+
+    const pLTitle = timePeriod === 'ALL' ? 'Total P&L' : `P&L (${timePeriod})`;
+
+    // Get unique values for each filter
+    const types = Array.from(new Set(assets.map(a => a.type).filter(Boolean))) as string[];
+    const exchanges = Array.from(new Set(assets.map(a => a.exchange).filter(Boolean))) as string[];
+    const currencies = Array.from(new Set(assets.map(a => a.currency).filter(Boolean))) as string[];
+    const countries = Array.from(new Set(assets.map(a => a.country).filter(Boolean))) as string[];
+    const sectors = Array.from(new Set(assets.map(a => a.sector).filter(Boolean))) as string[];
+    const platforms = Array.from(new Set(assets.map(a => a.platform).filter(Boolean))) as string[];
+
+    // Filter categories
+    const filterCategories = [
+        { id: 'type', label: 'Type', items: types, active: typeFilter, setter: setTypeFilter, icon: '🏷️' },
+        { id: 'exchange', label: 'Exchange', items: exchanges, active: exchangeFilter, setter: setExchangeFilter, icon: '📍' },
+        { id: 'currency', label: 'Currency', items: currencies, active: currencyFilter, setter: setCurrencyFilter, icon: '💱' },
+        { id: 'country', label: 'Country', items: countries, active: countryFilter, setter: setCountryFilter, icon: '🌍' },
+        { id: 'sector', label: 'Sector', items: sectors, active: sectorFilter, setter: setSectorFilter, icon: '🏢' },
+        { id: 'platform', label: 'Platform', items: platforms, active: platformFilter, setter: setPlatformFilter, icon: '🏦' },
+    ];
+
+    const activeFiltersCount = [typeFilter, exchangeFilter, currencyFilter, countryFilter, sectorFilter, platformFilter].filter(Boolean).length;
+
+    return (
+        <div id="dnd-wrapper">
+            <div style={{ display: 'flex', gap: '2rem', paddingBottom: '2rem', alignItems: 'flex-start' }}>
+
+                {/* LEFT COLUMN: Main Content (Filters + Assets) - Flex Grow */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
+
+                    {/* 1. Smart Filter Bar (Compacted & No Label) */}
+                    <div className="glass-panel" style={{
+                        borderRadius: '0.6rem',
+                        padding: '0.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        flexWrap: 'wrap'
+                    }}>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center', flex: 1 }}>
+
+
+                            {filterCategories.map(category => (
+                                <div key={category.id} style={{ position: 'relative' }}>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setActiveFilterCategory(activeFilterCategory === category.id ? null : category.id); }}
+                                        style={{
+                                            background: category.active ? 'var(--bg-active)' : 'var(--glass-bg)',
+                                            border: category.active ? '1px solid var(--accent)' : '1px solid var(--glass-border)',
+                                            borderRadius: '0.4rem',
+                                            color: category.active ? 'var(--accent)' : 'var(--text-secondary)',
+                                            padding: '0.3rem 0.6rem',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.3rem'
+                                        }}
+                                    >
+                                        <span style={{ opacity: 0.7 }}>{category.icon}</span>
+                                        <span>{category.label}</span>
+                                        {category.active && <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>({category.active})</span>}
+                                        <span style={{ fontSize: '0.6rem', opacity: 0.4 }}>▼</span>
+                                    </button>
+
+                                    {/* Dropdown Menu */}
+                                    {activeFilterCategory === category.id && category.items.length > 0 && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '100%',
+                                            left: 0,
+                                            marginTop: '0.4rem',
+                                            background: 'var(--bg-secondary)',
+                                            border: '1px solid var(--glass-border)',
+                                            borderRadius: '0.5rem',
+                                            padding: '0.4rem',
+                                            minWidth: '180px',
+                                            maxHeight: '250px',
+                                            overflowY: 'auto',
+                                            zIndex: 1000,
+                                            boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                                        }}>
+                                            {category.items.map(item => (
+                                                <button
+                                                    key={item}
+                                                    onClick={() => {
+                                                        category.setter(category.active === item ? null : item);
+                                                        setActiveFilterCategory(null);
+                                                    }}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '0.5rem 0.6rem',
+                                                        background: category.active === item ? 'var(--bg-active)' : 'transparent',
+                                                        border: 'none',
+                                                        borderRadius: '0.4rem',
+                                                        color: category.active === item ? 'var(--text-active)' : 'var(--text-secondary)',
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: category.active === item ? 600 : 400,
+                                                        cursor: 'pointer',
+                                                        textAlign: 'left',
+                                                        transition: 'all 0.2s',
+                                                        display: 'block',
+                                                        marginBottom: '0.1rem'
+                                                    }}
+                                                >
+                                                    {item}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {activeFiltersCount > 0 && (
+                            <button
+                                onClick={() => {
+                                    setTypeFilter(null);
+                                    setExchangeFilter(null);
+                                    setCurrencyFilter(null);
+                                    setCountryFilter(null);
+                                    setSectorFilter(null);
+                                    setPlatformFilter(null);
+                                }}
+                                style={{
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    borderRadius: '0.4rem',
+                                    color: '#ef4444',
+                                    padding: '0.3rem 0.6rem',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    marginLeft: 'auto'
+                                }}
+                            >
+                                Clear All
+                            </button>
+                        )}
+                    </div>
+
+                    {/* 2. Positions Section */}
+                    <div className="glass-panel" style={{ borderRadius: '0.75rem', padding: '1rem' }}>
+                        {/* Header with Title and FX Toggles (Left) vs Time/View (Right) */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+
+                            {/* LEFT: Time + FX Toggles */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+
+                                {/* 1. Time Period Selector (Moved Left) */}
+                                <div style={{ display: 'flex', gap: '0.1rem', background: 'var(--glass-bg)', borderRadius: '0.5rem', padding: '0.2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    {TIME_PERIODS.map(period => (
+                                        <button
+                                            key={period}
+                                            onClick={() => setTimePeriod(period)}
+                                            style={{
+                                                background: timePeriod === period ? 'var(--bg-active)' : 'transparent',
+                                                border: 'none',
+                                                borderRadius: '0.4rem',
+                                                color: timePeriod === period ? 'var(--text-active)' : 'var(--text-muted)',
+                                                padding: '0.25rem 0.5rem',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {period}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* RIGHT: View Mode & Columns */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+
+                                {/* Group Assets Button (Moved) */}
+                                <button
+                                    onClick={() => setIsGroupingEnabled(!isGroupingEnabled)}
+                                    style={{
+                                        background: isGroupingEnabled ? 'var(--bg-active)' : 'rgba(255,255,255,0.03)',
+                                        border: isGroupingEnabled ? '1px solid #6366f1' : '1px solid rgba(255,255,255,0.08)',
+                                        borderRadius: '0.4rem',
+                                        color: isGroupingEnabled ? 'var(--text-active)' : 'var(--text-secondary)',
+                                        padding: '0.3rem 0.6rem',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    {isGroupingEnabled ? "Ungroup" : "Group Assets"}
+                                </button>
+
+
+                                {/* View Mode Toggles (List -> Grid -> Detailed) + Column Controls Inline */}
+                                <div style={{ display: 'flex', gap: '0.1rem', background: 'var(--glass-bg)', borderRadius: '0.5rem', padding: '0.2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+
+                                    {/* List View Button */}
+                                    <button
+                                        onClick={() => setViewMode("list")}
+                                        style={{
+                                            background: viewMode === "list" ? 'var(--bg-active)' : 'transparent',
+                                            border: 'none', borderRadius: '0.4rem',
+                                            color: viewMode === "list" ? 'var(--text-active)' : 'var(--text-muted)',
+                                            padding: '0.3rem 0.6rem',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        title="List View"
+                                    >
+                                        <List size={16} strokeWidth={viewMode === "list" ? 2.5 : 2} />
+                                    </button>
+
+                                    {/* Grid View Button */}
+                                    <button
+                                        onClick={() => setViewMode("grid")}
+                                        style={{
+                                            background: viewMode === "grid" ? 'var(--bg-active)' : 'transparent',
+                                            border: 'none', borderRadius: '0.4rem',
+                                            color: viewMode === "grid" ? 'var(--text-active)' : 'var(--text-muted)',
+                                            padding: '0.3rem 0.6rem',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        title="Grid View"
+                                    >
+                                        <LayoutGrid size={16} strokeWidth={viewMode === "grid" ? 2.5 : 2} />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode("detailed")}
+                                        title="Detailed Cards"
+                                        style={{
+                                            background: viewMode === "detailed" ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
+                                            border: 'none',
+                                            borderRadius: '0.4rem',
+                                            color: viewMode === "detailed" ? '#6366f1' : 'var(--text-muted)',
+                                            padding: '0.35rem',
+                                            cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}
+                                    >
+                                        <LayoutTemplate size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ASSETS BODY */}
+                        <div style={{ minHeight: '400px' }}>
+                            {viewMode === "list" ? (
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    {/* Table Header Only Shows if Ungrouped or as a reference */}
+                                    {!isGroupingEnabled && (
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'minmax(220px, 1.8fr) 1fr 1fr 1fr 1.2fr 1.2fr 50px',
+                                            padding: '0.8rem 1rem',
+                                            background: 'var(--glass-bg)',
+                                            borderBottom: '1px solid var(--glass-border)',
+                                            borderRadius: '0.5rem 0.5rem 0 0',
+                                            alignItems: 'center'
+                                        }}>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em' }}>ASSET</div>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>PRICE</div>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>HOLDINGS</div>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>VALUE</div>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>P&L (1D)</div>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>{pLTitle.toUpperCase()}</div>
+                                            <div></div>
+                                        </div>
+                                    )}
+
+                                    {isGroupingEnabled ? (
+                                        <SortableContext items={orderedGroups.map(g => `group:${g}`)} strategy={verticalListSortingStrategy}>
+                                            {orderedGroups.map(type => (
+                                                <SortableGroup key={type} id={`group:${type}`}>
+                                                    <AssetGroup
+                                                        type={type}
+                                                        assets={groupedAssets[type]}
+                                                        totalEUR={groupTotals[type]}
+                                                        positionsViewCurrency={positionsViewCurrency}
+                                                        totalPortfolioValueEUR={totalValueEUR}
+                                                        isOwner={isOwner}
+                                                        onDelete={handleDelete}
+                                                        timeFactor={getTimeFactor()}
+                                                    />
+                                                </SortableGroup>
+                                            ))}
+                                        </SortableContext>
+                                    ) : (
+                                        <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                                            {filteredAssets.map(asset => (
+                                                <SortableAssetRow key={asset.id} id={asset.id}>
+                                                    <AssetTableRow
+                                                        asset={asset}
+                                                        positionsViewCurrency={positionsViewCurrency}
+                                                        totalPortfolioValueEUR={totalValueEUR}
+                                                        isOwner={isOwner}
+                                                        onDelete={handleDelete}
+                                                        timeFactor={getTimeFactor()}
+                                                    />
+                                                </SortableAssetRow>
+                                            ))}
+                                        </SortableContext>
+                                    )}
+
+                                    {filteredAssets.length === 0 && (
+                                        <div style={{ padding: '4rem', textAlign: 'center', opacity: 0.3, fontSize: '0.9rem' }}>
+                                            No assets found for these filters.
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                    {isGroupingEnabled ? (
+                                        <SortableContext items={orderedGroups.map(g => `group:${g}`)} strategy={verticalListSortingStrategy}>
+                                            {orderedGroups.map(type => {
+                                                const groupAssets = groupedAssets[type];
+                                                if (!groupAssets) return null; // Safety check for state transition
+                                                const groupTotal = groupTotals[type] || 0;
+
+                                                // Calculate currency info for header reuse
+                                                const RATES: Record<string, number> = { EUR: 1, USD: 1.09, TRY: 37.5 };
+                                                const rate = (positionsViewCurrency as string) === 'ORIGINAL' ? 1 : (RATES[positionsViewCurrency] || 1);
+                                                const displayCurrency = (positionsViewCurrency as string) === 'ORIGINAL' ? 'EUR' : positionsViewCurrency;
+                                                const currencySymbol = displayCurrency === 'EUR' ? '€' : displayCurrency === 'USD' ? '$' : displayCurrency === 'TRY' ? '₺' : '€';
+                                                const fmt = (val: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
+
+                                                return (
+                                                    <SortableGroup key={type} id={`group:${type}`}>
+
+                                                        <AssetGroupGridWrapper
+                                                            header={
+                                                                <AssetGroupHeader
+                                                                    type={type}
+                                                                    count={groupAssets?.length || 0}
+                                                                    totalEUR={groupTotal}
+                                                                    percentage={(groupTotal / (totalValueEUR || 1)) * 100}
+                                                                    currencySymbol={currencySymbol}
+                                                                    rate={rate}
+                                                                    fmt={fmt}
+                                                                />
+                                                            }
+                                                        >
+                                                            <div style={{
+                                                                display: 'grid',
+                                                                gridTemplateColumns: `repeat(${gridColumns}, 1fr)`,
+                                                                gap: '1rem',
+                                                                marginTop: '0.5rem'
+                                                            }}>
+                                                                <SortableContext items={groupAssets.map(i => i.id)} strategy={rectSortingStrategy}>
+                                                                    {groupAssets.map((asset) => {
+                                                                        return (
+                                                                            <SortableAssetCard key={asset.id} id={asset.id}>
+                                                                                {viewMode === 'detailed' ? (
+                                                                                    <DetailedAssetCard
+                                                                                        asset={asset}
+                                                                                        positionsViewCurrency={positionsViewCurrency}
+                                                                                        totalPortfolioValueEUR={totalValueEUR}
+                                                                                        isBlurred={isBlurred}
+                                                                                        isOwner={isOwner}
+                                                                                        onDelete={handleDelete}
+                                                                                        timeFactor={getTimeFactor()}
+                                                                                    />
+                                                                                ) : (
+                                                                                    <AssetCard
+                                                                                        asset={asset}
+                                                                                        positionsViewCurrency={positionsViewCurrency}
+                                                                                        totalPortfolioValueEUR={totalValueEUR}
+                                                                                        isBlurred={isBlurred}
+                                                                                        isOwner={isOwner}
+                                                                                        onDelete={handleDelete}
+                                                                                        timeFactor={getTimeFactor()}
+                                                                                    />
+                                                                                )}
+                                                                            </SortableAssetCard>
+                                                                        );
+                                                                    })}
+                                                                </SortableContext>
+                                                            </div>
+                                                        </AssetGroupGridWrapper>
+                                                    </SortableGroup>
+                                                );
+                                            })}
+                                        </SortableContext>
+                                    ) : (
+                                        <div style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: `repeat(${gridColumns}, 1fr)`,
+                                            gap: '1rem',
+                                            transition: 'all 0.3s ease'
+                                        }}>
+                                            <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
+                                                {filteredAssets.map((asset, index) => {
+                                                    return (
+                                                        <SortableAssetCard key={asset.id} id={asset.id}>
+                                                            {viewMode === 'detailed' ? (
+                                                                <DetailedAssetCard
+                                                                    asset={asset}
+                                                                    positionsViewCurrency={positionsViewCurrency}
+                                                                    totalPortfolioValueEUR={totalValueEUR}
+                                                                    isBlurred={isBlurred}
+                                                                    isOwner={isOwner}
+                                                                    onDelete={handleDelete}
+                                                                    timeFactor={getTimeFactor()}
+                                                                />
+                                                            ) : (
+                                                                <AssetCard
+                                                                    asset={asset}
+                                                                    positionsViewCurrency={positionsViewCurrency}
+                                                                    totalPortfolioValueEUR={totalValueEUR}
+                                                                    isBlurred={isBlurred}
+                                                                    isOwner={isOwner}
+                                                                    onDelete={handleDelete}
+                                                                    timeFactor={getTimeFactor()}
+                                                                />
+                                                            )}
+                                                        </SortableAssetCard>
+                                                    );
+                                                })}
+                                            </SortableContext>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* RIGHT COLUMN: Sidebar (Summary) - Fixed Width */}
+                <div style={{ width: '380px', flexShrink: 0, position: 'sticky', top: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {assets.length > 0 && (
+                        <>
+                            <UnifiedPortfolioSummary totalValueEUR={totalValueEUR} isBlurred={isBlurred} />
+                            <AllocationCard assets={assets} totalValueEUR={totalValueEUR} isBlurred={isBlurred} />
+                        </>
+                    )}
+                </div>
+            </div>
+
+        </div >
+    );
+}

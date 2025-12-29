@@ -1,0 +1,17 @@
+export interface AssetDisplay {
+    id: string;
+    symbol: string;
+    name?: string | null;
+    type: string;
+    quantity: number;
+    buyPrice: number;
+    currency: string;
+    currentPrice: number;
+    totalValueEUR: number;
+    plPercentage: number;
+    exchange?: string;
+    sector?: string;
+    country?: string;
+    platform?: string;
+
+}
