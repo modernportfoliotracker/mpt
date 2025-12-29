@@ -341,7 +341,8 @@ function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlu
     isBlurred: boolean,
     isOwner: boolean,
     onDelete: (id: string) => void,
-    timeFactor: number
+    timeFactor: number,
+    rank?: number
 }) {
     const router = useRouter(); // Initialize router
 
