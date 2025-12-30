@@ -171,3 +171,212 @@ body.light .glass-input:focus {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* =========================================
+   MOBILE RESPONSIVE OVERRIDES
+   ========================================= */
+
+/* Responsive Utilities */
+.mobile-only {
+  display: none !important;
+}
+
+.desktop-only {
+  display: flex !important;
+}
+
+/* Navbar Responsive */
+.navbar-inner-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  width: 100%;
+  max-width: 1200px;
+  height: 100%;
+}
+
+.navbar-logo-text {
+  font-size: 1.5rem;
+  fontWeight: 900;
+  letterSpacing: -0.05em;
+}
+
+.navbar-slogan {
+  font-size: 0.7rem;
+  opacity: 0.6;
+  fontWeight: 500;
+  color: var(--text-secondary);
+  display: block;
+}
+
+.navbar-search-container {
+  flex: 1;
+  display: flex;
+  justifyContent: center;
+  maxWidth: 350px;
+}
+
+/* Asset Table Responsive Grid */
+.asset-table-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.8fr) 1fr 1fr 1fr 1.2fr 1.2fr 50px;
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.asset-table-header {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.8fr) 1fr 1fr 1fr 1.2fr 1.2fr 50px;
+  padding: 0 1rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Asset Group Header Responsive */
+.asset-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: var(--glass-bg);
+  border-radius: 0.6rem;
+  margin-bottom: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 768px) {
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Navbar Mobile */
+  .navbar-inner-container {
+    padding: 0 0.5rem;
+  }
+
+  .navbar-logo-text {
+    font-size: 1.1rem !important;
+  }
+
+  .navbar-slogan {
+    display: none;
+  }
+
+  .navbar-search-container {
+    display: none;
+  }
+
+  /* Hide search in top nav on mobile, maybe restore elsewhere */
+
+  /* Asset Table turns into Card View on Mobile */
+  .asset-table-header {
+    display: none !important;
+  }
+
+  .asset-table-grid {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem !important;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    margin-bottom: 0.5rem;
+    border-radius: 0.5rem;
+    align-items: flex-start;
+  }
+
+  /* Asset Column (Name/Icon) taking full width header */
+  .asset-table-grid>div:nth-child(1) {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 0.5rem;
+  }
+
+  /* Price, Holdings, Value columns become 2-col grid */
+  .asset-table-grid>div:nth-child(2),
+  /* Price */
+  .asset-table-grid>div:nth-child(3),
+  /* Holdings */
+  .asset-table-grid>div:nth-child(4),
+  /* Value */
+  .asset-table-grid>div:nth-child(5),
+  /* Daily */
+  .asset-table-grid>div:nth-child(6)
+
+  /* Total */
+    {
+    width: 48%;
+    /* 2 items per row */
+    text-align: left !important;
+    display: flex !important;
+    flex-direction: row !important;
+    /* Label - Value pair */
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+  }
+
+  /* Add pseudo-labels via CSS is hard without data attributes, 
+     so we might rely on the existing layout or minimal labels */
+
+  .asset-table-grid>div:nth-child(7) {
+    /* Actions */
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+  }
+
+  /* Asset Group Header Adjustments */
+  .asset-group-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .asset-group-header>div:last-child {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Dashboard Layout Mobile Matches */
+  .dashboard-layout-container {
+    flex-direction: column-reverse !important;
+    gap: 1rem !important;
+  }
+
+  .dashboard-sidebar {
+    width: 100% !important;
+    position: relative !important;
+    top: 0 !important;
+  }
+}
+
+/* Dashboard Layout Default (Desktop) */
+.dashboard-layout-container {
+  display: flex;
+  gap: 2rem;
+  padding-bottom: 2rem;
+  align-items: flex-start;
+}
+
+.dashboard-sidebar {
+  width: 380px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}

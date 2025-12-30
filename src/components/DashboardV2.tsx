@@ -173,16 +173,11 @@ function AssetTableRow({
 
     return (
         <div
+            className="asset-table-grid table-row-hover"
             style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(220px, 1.8fr) 1fr 1fr 1fr 1.2fr 1.2fr 50px',
-                padding: '0.6rem 1rem',
-                borderBottom: '1px solid rgba(255,255,255,0.02)',
-                alignItems: 'center',
                 transition: 'all 0.3s ease',
                 background: justUpdated ? 'rgba(16, 185, 129, 0.1)' : isEditing ? 'rgba(245, 158, 11, 0.05)' : 'transparent'
             }}
-            className="table-row-hover"
         >
             {/* Asset Column */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
@@ -736,16 +731,8 @@ const AssetGroupHeader = ({
     return (
         <div
             {...dragHandleProps}
+            className="asset-group-header"
             style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '0.5rem 1rem',
-                background: 'var(--glass-bg)',
-                borderRadius: '0.6rem',
-                marginBottom: '0.4rem',
-                border: '1px solid rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(10px)',
                 cursor: dragHandleProps ? 'grab' : 'default'
             }}
         >
@@ -1051,7 +1038,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
 
     return (
         <div id="dnd-wrapper">
-            <div style={{ display: 'flex', gap: '2rem', paddingBottom: '2rem', alignItems: 'flex-start' }}>
+            <div className="dashboard-layout-container">
 
                 {/* LEFT COLUMN: Main Content (Filters + Assets) - Flex Grow */}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
@@ -1283,11 +1270,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     {/* Table Header Only Shows if Ungrouped or as a reference */}
                                     {!isGroupingEnabled && (
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: 'minmax(220px, 1.8fr) 1fr 1fr 1fr 1.2fr 1.2fr 50px',
-                                            padding: '0.8rem 1rem',
-                                            background: 'var(--glass-bg)',
+                                        <div className="asset-table-header glass-panel" style={{
                                             borderBottom: '1px solid var(--glass-border)',
                                             borderRadius: '0.5rem 0.5rem 0 0',
                                             alignItems: 'center'
@@ -1418,7 +1401,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                     ) : (
                                         <div style={{
                                             display: 'grid',
-                                            gridTemplateColumns: `repeat(${gridColumns}, 1fr)`,
+                                            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                                             gap: '1rem',
                                             transition: 'all 0.3s ease'
                                         }}>
@@ -1460,7 +1443,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                 </div>
 
                 {/* RIGHT COLUMN: Sidebar (Summary) - Fixed Width */}
-                <div style={{ width: '380px', flexShrink: 0, position: 'sticky', top: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="dashboard-sidebar">
                     {assets.length > 0 && (
                         <>
                             <UnifiedPortfolioSummary totalValueEUR={totalValueEUR} isBlurred={isBlurred} />

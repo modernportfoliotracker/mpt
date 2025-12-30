@@ -34,25 +34,17 @@ export async function Navbar({ totalBalance, username, isOwner, showPortfolioBut
             alignItems: 'center',
             justifyContent: 'center'
         }}>
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 1rem', // Match global container padding if needed
-                width: '100%',
-                maxWidth: '1200px', // Match global container max-width
-                height: '100%'
-            }}>
+            <div className="navbar-inner-container">
                 {/* Left: Logo */}
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                     <Link href="/" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '2px', lineHeight: 1, textDecoration: 'none' }}>
-                        <span style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.05em' }} className="gradient-text">Modern Portfolio Tracker</span>
-                        <span style={{ fontSize: '0.7rem', opacity: 0.6, fontWeight: 500, color: 'var(--text-secondary)' }}>Track your wealth in modern way!</span>
+                        <span className="gradient-text navbar-logo-text">Modern Portfolio Tracker</span>
+                        <span className="navbar-slogan">Track your wealth in modern way!</span>
                     </Link>
                 </div>
 
                 {/* Center: Search Bar (Only for Owner) */}
-                <div style={{ flex: 1, display: 'flex', justifyContent: 'center', maxWidth: '350px' }}>
+                <div className="navbar-search-container">
                     {isOwner && (
                         <div style={{ width: '100%', transform: 'scale(0.9)' }}>
                             <InlineAssetSearch />
@@ -73,6 +65,7 @@ export async function Navbar({ totalBalance, username, isOwner, showPortfolioBut
                                         color: 'var(--text-secondary)',
                                         textDecoration: 'none',
                                     }}
+                                    className="desktop-only"
                                 >
                                     My Portfolio
                                 </Link>
@@ -83,11 +76,12 @@ export async function Navbar({ totalBalance, username, isOwner, showPortfolioBut
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0' }}>
                                     <form action={handleSignOut} style={{ lineHeight: 1 }}>
                                         <button type="submit" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 600, padding: 0 }}>
-                                            Sign Out
+                                            <LogOut size={16} className="mobile-only" />
+                                            <span className="desktop-only">Sign Out</span>
                                         </button>
                                     </form>
                                     {username && (
-                                        <div style={{ fontSize: '0.65rem', opacity: 0.6, color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.2 }}>
+                                        <div className="desktop-only" style={{ fontSize: '0.65rem', opacity: 0.6, color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.2 }}>
                                             @{username}
                                         </div>
                                     )}
