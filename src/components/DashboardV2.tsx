@@ -107,14 +107,16 @@ function AssetTableRow({
     totalPortfolioValueEUR,
     isOwner,
     onDelete,
-    timeFactor
+    timeFactor,
+    rowIndex
 }: {
     asset: AssetDisplay,
     positionsViewCurrency: string,
     totalPortfolioValueEUR: number,
     isOwner: boolean,
     onDelete: (id: string) => void,
-    timeFactor: number
+    timeFactor: number,
+    rowIndex?: number
 }) {
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
@@ -175,12 +177,17 @@ function AssetTableRow({
         <div
             className="asset-table-grid table-row-hover"
             style={{
-                transition: 'all 0.3s ease',
-                background: justUpdated ? 'rgba(16, 185, 129, 0.1)' : isEditing ? 'rgba(245, 158, 11, 0.05)' : 'transparent'
+                background: justUpdated
+                    ? 'rgba(16, 185, 129, 0.1)'
+                    : isEditing
+                        ? 'rgba(245, 158, 11, 0.05)'
+                        : (rowIndex !== undefined && rowIndex % 2 === 1)
+                            ? 'rgba(255,255,255,0.02)'
+                            : 'transparent'
             }}
         >
             {/* Asset Column */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
+            < div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
                 <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size="2rem" />
                 <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                     <span style={{
@@ -195,88 +202,91 @@ function AssetTableRow({
                     </span>
                     <span style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>{asset.symbol}</span>
                 </div>
-            </div>
+            </div >
 
             {/* Price Column */}
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+            < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{currencySymbol}{fmt(displayPrice)}</span>
-                {isEditing ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '2px' }}>
+                {
+                    isEditing ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '2px' }}>
+                            <input
+                                type="number"
+                                value={editCost}
+                                onChange={(e) => setEditCost(Number(e.target.value))}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    width: '60px',
+                                    background: 'var(--glass-shine)',
+                                    border: '1px solid var(--glass-border)',
+                                    borderRadius: '3px',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '0.7rem',
+                                    padding: '2px 4px',
+                                    textAlign: 'right'
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>{currencySymbol}{fmt(displayAvgPrice)}</span>
+                    )
+                }
+            </div >
+
+            {/* Holdings Column */}
+            < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                {
+                    isEditing ? (
                         <input
                             type="number"
-                            value={editCost}
-                            onChange={(e) => setEditCost(Number(e.target.value))}
+                            value={editQty}
+                            onChange={(e) => setEditQty(Number(e.target.value))}
                             onClick={(e) => e.stopPropagation()}
                             style={{
-                                width: '60px',
+                                width: '80px',
                                 background: 'var(--glass-shine)',
                                 border: '1px solid var(--glass-border)',
                                 borderRadius: '3px',
                                 color: 'var(--text-primary)',
-                                fontSize: '0.7rem',
-                                padding: '2px 4px',
-                                textAlign: 'right'
+                                fontSize: '0.85rem',
+                                padding: '4px 8px',
+                                textAlign: 'right',
+                                marginLeft: 'auto'
                             }}
                         />
-                    </div>
-                ) : (
-                    <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>{currencySymbol}{fmt(displayAvgPrice)}</span>
-                )}
-            </div>
-
-            {/* Holdings Column */}
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                {isEditing ? (
-                    <input
-                        type="number"
-                        value={editQty}
-                        onChange={(e) => setEditQty(Number(e.target.value))}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                            width: '80px',
-                            background: 'var(--glass-shine)',
-                            border: '1px solid var(--glass-border)',
-                            borderRadius: '3px',
-                            color: 'var(--text-primary)',
-                            fontSize: '0.85rem',
-                            padding: '4px 8px',
-                            textAlign: 'right',
-                            marginLeft: 'auto'
-                        }}
-                    />
-                ) : (
-                    <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{asset.quantity.toLocaleString()}</span>
-                )}
-            </div>
+                    ) : (
+                        <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{asset.quantity.toLocaleString()}</span>
+                    )}
+            </div >
 
             {/* Value Column */}
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+            < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(displayTotalValue, 0, 0)}</span>
                 <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>Total</span>
-            </div>
+            </div >
 
             {/* Daily P&L Column */}
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+            < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isDailyProfit ? '#10b981' : '#ef4444' }}>
                     {isDailyProfit ? '+' : ''}{currencySymbol}{fmt(dailyProfitVal, 0, 0)}
                 </span>
                 <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isDailyProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
                     {isDailyProfit ? '▲' : '▼'}{fmt(dailyProfitPct)}%
                 </span>
-            </div>
+            </div >
 
             {/* Total P&L Column */}
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+            < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isTotalProfit ? '#10b981' : '#ef4444' }}>
                     {isTotalProfit ? '+' : ''}{currencySymbol}{fmt(totalProfitVal, 0, 0)}
                 </span>
                 <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isTotalProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
                     {isTotalProfit ? '▲' : '▼'}{fmt(totalProfitPct)}%
                 </span>
-            </div>
+            </div >
 
             {/* Actions Column */}
-            <div style={{ textAlign: 'right' }}>
+            < div style={{ textAlign: 'right' }}>
                 {isOwner && (
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
                         {isEditing ? (
@@ -323,8 +333,8 @@ function AssetTableRow({
                         )}
                     </div>
                 )}
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
 
@@ -1304,7 +1314,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                         </SortableContext>
                                     ) : (
                                         <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                                            {filteredAssets.map(asset => (
+                                            {filteredAssets.map((asset, index) => (
                                                 <SortableAssetRow key={asset.id} id={asset.id}>
                                                     <AssetTableRow
                                                         asset={asset}
@@ -1313,6 +1323,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                         isOwner={isOwner}
                                                         onDelete={handleDelete}
                                                         timeFactor={getTimeFactor()}
+                                                        rowIndex={index}
                                                     />
                                                 </SortableAssetRow>
                                             ))}
