@@ -266,6 +266,7 @@ body.light .glass-input:focus {
 
   .navbar-logo-text {
     font-size: 1.1rem !important;
+    white-space: nowrap;
   }
 
   .navbar-slogan {
