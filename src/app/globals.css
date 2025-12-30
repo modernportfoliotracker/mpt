@@ -325,6 +325,8 @@ body.light .glass-input:focus {
     display: flex;
     align-items: center;
     overflow: hidden;
+    min-width: 0;
+    /* Critical for flex child truncation */
   }
 
   .asset-table-grid>div:nth-child(1)>div:first-child {
