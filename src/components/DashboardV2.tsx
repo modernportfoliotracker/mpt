@@ -906,6 +906,21 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
         setItems(sorted);
     }, [assets]);
 
+    // Force List View on Mobile
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 768) {
+                setViewMode("list");
+            }
+        };
+
+        // Initial check
+        handleResize();
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
@@ -1168,7 +1183,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                     </div>
 
                     {/* 2. Positions Section */}
-                    <div className="glass-panel" style={{ borderRadius: '0.75rem', padding: '1rem' }}>
+                    <div className="glass-panel positions-card" style={{ borderRadius: '0.75rem', padding: '1rem' }}>
                         {/* Header with Title and FX Toggles (Left) vs Time/View (Right) */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
 
@@ -1199,10 +1214,10 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                 </div>
                             </div>
 
-                            {/* RIGHT: View Mode & Columns */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {/* RIGHT: View Mode & Columns - Desktop Only */}
+                            <div className="desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
 
-                                {/* Group Assets Button (Moved) */}
+                                {/* Group Assets Button */}
                                 <button
                                     onClick={() => setIsGroupingEnabled(!isGroupingEnabled)}
                                     style={{
