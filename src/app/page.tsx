@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { auth } from "@/auth";
 import { PortfolioSummary } from "@/components/PortfolioSummary";
@@ -5,17 +6,85 @@ import { prisma } from "@/lib/prisma";
 import { getPortfolioMetrics } from "@/lib/portfolio";
 import { CurrencyProvider } from "@/context/CurrencyContext";
 
+export const dynamic = 'force-dynamic';
+
+
+
 export default async function Home() {
   const session = await auth();
 
-  let displayAssets = [
-    { symbol: 'AAPL', type: 'STOCK', totalValueEUR: 15000 },
-    { symbol: 'BTC', type: 'CRYPTO', totalValueEUR: 12000 },
-    { symbol: 'XAU', type: 'GOLD', totalValueEUR: 8000 },
-    { symbol: 'GOOGL', type: 'STOCK', totalValueEUR: 7560.85 },
-  ];
-  let displayTotalValue = 42560.85;
-  let isMock = true;
+  if (!session) {
+    return (
+      <div className="container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingBottom: '2rem' }}>
+        <CurrencyProvider>
+          <Navbar showPortfolioButton={false} />
+
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '3rem',
+            paddingTop: '2rem'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <h1 className="gradient-text" style={{ fontSize: '3.5rem', fontWeight: 800, marginBottom: '1rem', lineHeight: 1.1 }}>
+                Modern Portfolio<br />Tracker
+              </h1>
+              <p style={{ fontSize: '1.2rem', color: 'var(--text-secondary)', maxWidth: '500px', margin: '0 auto' }}>
+                Track your wealth across stocks, crypto, and assets in one beautiful dashboard.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <Link href="/login" className="glass-panel" style={{
+                padding: '2.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                width: '280px',
+                gap: '1rem',
+                textDecoration: 'none',
+                borderRadius: '1.5rem',
+                transition: 'transform 0.2s',
+                cursor: 'pointer'
+              }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>Login</div>
+                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  Access your existing portfolio dashboard.
+                </div>
+                <div className="glass-button" style={{ marginTop: '1rem', width: '100%', textAlign: 'center' }}>Sign In</div>
+              </Link>
+
+              <Link href="/register" className="glass-panel" style={{
+                padding: '2.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                width: '280px',
+                gap: '1rem',
+                textDecoration: 'none',
+                borderRadius: '1.5rem',
+                transition: 'transform 0.2s',
+                cursor: 'pointer'
+              }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>Sign Up</div>
+                <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  Create a new account and start tracking.
+                </div>
+                <div className="glass-button" style={{ marginTop: '1rem', width: '100%', textAlign: 'center', background: 'var(--primary)', color: 'white' }}>Get Started</div>
+              </Link>
+            </div>
+          </div>
+        </CurrencyProvider>
+      </div>
+    );
+  }
+
+  // Authenticated View
+  let displayAssets: any[] = [];
+  let displayTotalValue = 0;
 
   if (session?.user?.email) {
     const user = await prisma.user.findUnique({
@@ -29,11 +98,8 @@ export default async function Home() {
 
     if (user?.portfolio) {
       const { totalValueEUR, assetsWithValues } = await getPortfolioMetrics(user.portfolio.assets);
-      if (assetsWithValues.length > 0) {
-        displayAssets = assetsWithValues;
-        displayTotalValue = totalValueEUR;
-        isMock = false;
-      }
+      displayAssets = assetsWithValues;
+      displayTotalValue = totalValueEUR;
     }
   }
 
@@ -46,11 +112,9 @@ export default async function Home() {
         />
 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '1rem', paddingTop: '1rem' }}>
-
-          {/* Visual Mockup Preview or Real Portfolio */}
           <div style={{ width: '100%', maxWidth: '1200px' }}>
             <PortfolioSummary
-              isMock={isMock}
+              isMock={false}
               totalValueEUR={displayTotalValue}
               assets={displayAssets}
             />
@@ -60,3 +124,4 @@ export default async function Home() {
     </div>
   );
 }
+

@@ -22,7 +22,7 @@ export function SortableAssetRow({ id, children }: { id: string, children: React
     };
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+        <div ref={setNodeRef} style={style} className="sortable-asset-row" {...attributes} {...listeners}>
             {children}
         </div>
     );
