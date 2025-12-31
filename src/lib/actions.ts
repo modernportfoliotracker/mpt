@@ -100,7 +100,7 @@ export async function authenticate(
 
 const AssetSchema = z.object({
     symbol: z.string().toUpperCase().min(1),
-    type: z.enum(["STOCK", "CRYPTO", "GOLD", "BOND", "FUND", "CASH"]),
+    type: z.enum(["STOCK", "CRYPTO", "GOLD", "BOND", "FUND", "CASH", "COMMODITY"]),
     quantity: z.coerce.number().positive(),
     buyPrice: z.coerce.number().positive(),
     currency: z.enum(["USD", "EUR", "TRY"]),

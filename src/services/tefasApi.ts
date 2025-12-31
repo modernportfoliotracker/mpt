@@ -45,7 +45,7 @@ export async function getTefasFundInfo(code: string): Promise<TefasFund | null> 
                 });
 
                 const latest = sorted[0];
-                price = latest.price;
+                price = latest.price || 0;
                 lastUpdated = latest.date;
             }
 

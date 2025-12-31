@@ -176,7 +176,7 @@ function getCurrencyFromExchange(exchange?: string): string {
     return 'USD';
 }
 
-function mapYahooType(type?: string): 'STOCK' | 'CRYPTO' | 'GOLD' | 'BOND' | 'FUND' | 'ETF' | 'CASH' {
+function mapYahooType(type?: string): 'STOCK' | 'CRYPTO' | 'GOLD' | 'BOND' | 'FUND' | 'ETF' | 'CASH' | 'COMMODITY' {
     if (!type) return 'STOCK';
     const t = type.toUpperCase();
     if (t === 'CRYPTOCURRENCY') return 'CRYPTO';

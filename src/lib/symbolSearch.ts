@@ -2,7 +2,7 @@ export interface SymbolOption {
     symbol: string;
     fullName: string;
     exchange: string;
-    type: 'STOCK' | 'CRYPTO' | 'GOLD' | 'BOND' | 'FUND' | 'ETF' | 'CASH';
+    type: 'STOCK' | 'CRYPTO' | 'GOLD' | 'BOND' | 'FUND' | 'ETF' | 'CASH' | 'COMMODITY';
     currency: string;
     country?: string;
     rawName?: string;
