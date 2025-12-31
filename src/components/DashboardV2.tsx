@@ -205,7 +205,7 @@ function AssetTableRow({
                         {asset.symbol}
                     </span>
                     {/* Mobile Subtitle: Quantity formatted */}
-                    <span className="mobile-only" style={{ fontSize: '0.7rem', opacity: 0.5, fontWeight: 500 }}>
+                    <span className="mobile-only" style={{ fontSize: '0.65rem', opacity: 0.5 }}>
                         x{asset.quantity >= 10000
                             ? (asset.quantity / 1000).toFixed(1) + 'K'
                             : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 2 })}
