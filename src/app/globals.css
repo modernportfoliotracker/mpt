@@ -380,7 +380,15 @@ body.light .glass-input:focus {
     font-size: 0.65rem !important;
     opacity: 0.6;
     display: block;
-    /* Ensure it wraps if needed or stays under */
+  }
+
+  /* Mobile Subtitle (Quantity) - Ensure it matches Cost/Total Cost style exactly */
+  .asset-table-grid>div:nth-child(1) .mobile-only {
+    font-size: 0.65rem !important;
+    font-weight: 400 !important;
+    /* Override the 700 bold from generic span rule */
+    opacity: 0.5 !important;
+    color: var(--text-primary) !important;
   }
 
 
