@@ -289,8 +289,43 @@ body.light .glass-input:focus {
 
   /* Asset Table Mobile Compact View (2-Row Grid) */
   .asset-table-header {
+    display: grid !important;
+    /* Enable header on mobile */
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1.1fr) !important;
+    padding: 0.5rem 0.2rem !important;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 0.5rem;
+    align-items: center;
+  }
+
+  /* Hide unused header columns to match data grid */
+  /* 3: Holdings, 5: 1D P&L, 7: Actions */
+  .asset-table-header>div:nth-child(3),
+  .asset-table-header>div:nth-child(5),
+  .asset-table-header>div:nth-child(7) {
     display: none !important;
   }
+
+  /* Header Text Styling Matches Data Alignment */
+  .asset-table-header>div:nth-child(1) {
+    text-align: left;
+    padding-left: 0;
+  }
+
+  .asset-table-header>div:nth-child(2) {
+    text-align: right;
+  }
+
+  .asset-table-header>div:nth-child(4) {
+    text-align: right;
+  }
+
+  /* Value */
+  .asset-table-header>div:nth-child(6) {
+    text-align: right;
+  }
+
+  /* Total P&L */
 
   .asset-table-grid {
     display: grid !important;
