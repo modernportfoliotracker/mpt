@@ -278,10 +278,10 @@ function AssetTableRow({
             {/* Total P&L Column */}
             < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isTotalProfit ? '#10b981' : '#ef4444' }}>
-                    {isTotalProfit ? '+' : ''}{currencySymbol}{fmt(totalProfitVal, 0, 0)}
+                    {isTotalProfit ? '▲' : '▼'}{fmt(totalProfitPct)}%
                 </span>
                 <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isTotalProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
-                    {isTotalProfit ? '▲' : '▼'}{fmt(totalProfitPct)}%
+                    {isTotalProfit ? '+' : ''}{currencySymbol}{fmt(totalProfitVal, 0, 0)}
                 </span>
             </div >
 
@@ -1330,11 +1330,29 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                             alignItems: 'center'
                                         }}>
                                             <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em' }}>ASSET</div>
-                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>PRICE</div>
+
+                                            {/* Price / Cost Header */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>PRICE</span>
+                                                <span className="mobile-only" style={{ fontSize: '0.6rem', fontWeight: 500, opacity: 0.4 }}>COST</span>
+                                            </div>
+
                                             <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>HOLDINGS</div>
-                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>VALUE</div>
+
+                                            {/* Value / Total Cost Header */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>VALUE</span>
+                                                <span className="mobile-only" style={{ fontSize: '0.6rem', fontWeight: 500, opacity: 0.4 }}>TOTAL COST</span>
+                                            </div>
+
                                             <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>P&L (1D)</div>
-                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>{pLTitle.toUpperCase()}</div>
+
+                                            {/* P&L % / Amount Header */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>P&L (%)</span>
+                                                <span className="mobile-only" style={{ fontSize: '0.6rem', fontWeight: 500, opacity: 0.4 }}>AMOUNT</span>
+                                            </div>
+
                                             <div></div>
                                         </div>
                                     )}
