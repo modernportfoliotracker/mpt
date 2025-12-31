@@ -200,7 +200,12 @@ function AssetTableRow({
                     }}>
                         {companyName}
                     </span>
-                    <span style={{ fontSize: '0.7rem', opacity: 0.5, fontWeight: 500 }}>
+                    {/* Desktop Subtitle: Ticker */}
+                    <span className="desktop-only" style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>
+                        {asset.symbol}
+                    </span>
+                    {/* Mobile Subtitle: Quantity formatted */}
+                    <span className="mobile-only" style={{ fontSize: '0.7rem', opacity: 0.5, fontWeight: 500 }}>
                         x{asset.quantity >= 10000
                             ? (asset.quantity / 1000).toFixed(1) + 'K'
                             : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 2 })}
