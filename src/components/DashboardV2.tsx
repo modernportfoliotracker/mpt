@@ -122,16 +122,15 @@ function AssetTableRow({
     const [isEditing, setIsEditing] = useState(false);
     const [editQty, setEditQty] = useState(asset.quantity);
     const [editCost, setEditCost] = useState(asset.buyPrice);
+    const [editName, setEditName] = useState(asset.name || "");
+    const [editSymbol, setEditSymbol] = useState(asset.symbol);
     const [isSaving, setIsSaving] = useState(false);
     const [justUpdated, setJustUpdated] = useState(false);
 
     // Calculate Conversion Rate
-    // Calculate Conversion Rate
     let displayCurrency = positionsViewCurrency === 'ORG' ? asset.currency : positionsViewCurrency;
     const rate = positionsViewCurrency === 'ORG' ? 1 : getRate(asset.currency, displayCurrency);
     const currencySymbol = getCurrencySymbol(displayCurrency);
-
-
 
     const displayPrice = asset.currentPrice * rate;
     const displayAvgPrice = asset.buyPrice * rate;
@@ -143,8 +142,7 @@ function AssetTableRow({
     const totalProfitPct = asset.plPercentage;
 
     // Daily P&L (Simulated with a smaller mock factor if not available, or just use 1D factor)
-    // For now, let's assume "Daily" is 1D factor * profit if we don't have real daily change.
-    const dailyProfitVal = totalProfitVal * 0.05; // 5% mock of total for "Daily" if no real data
+    const dailyProfitVal = totalProfitVal * 0.05;
     const dailyProfitPct = totalProfitPct * 0.05;
 
     const isTotalProfit = totalProfitVal >= 0;
@@ -157,7 +155,13 @@ function AssetTableRow({
         e.stopPropagation();
         if (isSaving) return;
         setIsSaving(true);
-        const res = await updateAsset(asset.id, { quantity: Number(editQty), buyPrice: Number(editCost) });
+        const res = await updateAsset(asset.id, {
+            quantity: Number(editQty),
+            buyPrice: Number(editCost),
+            name: editName,
+            symbol: editSymbol
+        });
+
         if (res.error) {
             alert(res.error);
             setIsSaving(false);
@@ -167,6 +171,13 @@ function AssetTableRow({
             router.refresh();
             setTimeout(() => setJustUpdated(false), 2000);
             setIsSaving(false);
+        }
+    };
+
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (confirm(`Are you sure you want to delete ${asset.symbol}?`)) {
+            onDelete(asset.id);
         }
     };
 
@@ -187,146 +198,214 @@ function AssetTableRow({
             }}
         >
             {/* Asset Column */}
-            < div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
                 <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size="2rem" />
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                    <span style={{
-                        fontSize: '0.85rem',
-                        fontWeight: 600,
-                        color: 'var(--text-primary)',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
-                    }}>
-                        {companyName}
-                    </span>
-                    {/* Desktop Subtitle: Ticker */}
-                    <span className="desktop-only" style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>
-                        {asset.symbol}
-                    </span>
-                    {/* Mobile Subtitle: Quantity formatted */}
-                    <span className="mobile-only" style={{ fontSize: '0.65rem', opacity: 0.5 }}>
-                        <span style={{ fontSize: '0.7em', opacity: 0.8, marginRight: '1px' }}>x</span>
-                        {asset.quantity >= 10000
-                            ? (asset.quantity / 1000).toFixed(1) + 'K'
-                            : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 2 })}
-                    </span>
-                </div>
-            </div >
-
-            {/* Price Column */}
-            < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{currencySymbol}{fmt(displayPrice)}</span>
-                {
-                    isEditing ? (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '2px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: isEditing ? '4px' : '0' }}>
+                    {isEditing ? (
+                        <>
                             <input
-                                type="number"
-                                value={editCost}
-                                onChange={(e) => setEditCost(Number(e.target.value))}
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
                                 onClick={(e) => e.stopPropagation()}
+                                placeholder="Asset Name"
                                 style={{
-                                    width: '60px',
+                                    background: 'var(--glass-shine)',
+                                    border: '1px solid var(--glass-border)',
+                                    borderRadius: '3px',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '0.8rem',
+                                    padding: '2px 4px',
+                                    width: '100%',
+                                }}
+                            />
+                            <input
+                                type="text"
+                                value={editSymbol}
+                                onChange={(e) => setEditSymbol(e.target.value.toUpperCase())}
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder="Ticker"
+                                style={{
                                     background: 'var(--glass-shine)',
                                     border: '1px solid var(--glass-border)',
                                     borderRadius: '3px',
                                     color: 'var(--text-primary)',
                                     fontSize: '0.7rem',
                                     padding: '2px 4px',
-                                    textAlign: 'right'
+                                    width: '80px',
+                                    textTransform: 'uppercase'
                                 }}
                             />
-                        </div>
+                        </>
                     ) : (
-                        <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>{currencySymbol}{fmt(displayAvgPrice)}</span>
-                    )
-                }
-            </div >
+                        <>
+                            <span style={{
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                color: 'var(--text-primary)',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                            }}>
+                                {companyName}
+                            </span>
+                            {/* Desktop Subtitle: Ticker */}
+                            <span className="desktop-only" style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>
+                                {asset.symbol}
+                            </span>
+                            {/* Mobile Subtitle: Quantity formatted */}
+                            <span className="mobile-only" style={{ fontSize: '0.65rem', opacity: 0.5 }}>
+                                <span style={{ fontSize: '0.7em', opacity: 0.8, marginRight: '1px' }}>x</span>
+                                {asset.quantity >= 10000
+                                    ? (asset.quantity / 1000).toFixed(1) + 'K'
+                                    : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                            </span>
+                        </>
+                    )}
+                </div>
+            </div>
 
-            {/* Holdings Column */}
-            < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                {
-                    isEditing ? (
+            {/* Price Column */}
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{currencySymbol}{fmt(displayPrice)}</span>
+                {isEditing ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '2px' }}>
                         <input
                             type="number"
-                            value={editQty}
-                            onChange={(e) => setEditQty(Number(e.target.value))}
+                            value={editCost}
+                            onChange={(e) => setEditCost(Number(e.target.value))}
                             onClick={(e) => e.stopPropagation()}
                             style={{
-                                width: '80px',
+                                width: '60px',
                                 background: 'var(--glass-shine)',
                                 border: '1px solid var(--glass-border)',
                                 borderRadius: '3px',
                                 color: 'var(--text-primary)',
-                                fontSize: '0.85rem',
-                                padding: '4px 8px',
-                                textAlign: 'right',
-                                marginLeft: 'auto'
+                                fontSize: '0.7rem',
+                                padding: '2px 4px',
+                                textAlign: 'right'
                             }}
                         />
-                    ) : (
-                        <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{asset.quantity.toLocaleString()}</span>
-                    )}
-            </div >
+                    </div>
+                ) : (
+                    <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>{currencySymbol}{fmt(displayAvgPrice)}</span>
+                )}
+            </div>
+
+            {/* Holdings Column */}
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                {isEditing ? (
+                    <input
+                        type="number"
+                        value={editQty}
+                        onChange={(e) => setEditQty(Number(e.target.value))}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            width: '80px',
+                            background: 'var(--glass-shine)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '3px',
+                            color: 'var(--text-primary)',
+                            fontSize: '0.85rem',
+                            padding: '4px 8px',
+                            textAlign: 'right',
+                            marginLeft: 'auto'
+                        }}
+                    />
+                ) : (
+                    <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{asset.quantity.toLocaleString()}</span>
+                )}
+            </div>
 
             {/* Value Column */}
-            < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(displayTotalValue, 0, 0)}</span>
                 <span className="cost-basis-display" style={{ fontSize: '0.7rem', opacity: 0.5 }}>{currencySymbol}{fmt(displayCostBasis, 0, 0)}</span>
-            </div >
+            </div>
 
-            {/* Daily P&L Column */}
-            < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+            {/* Daily P&L Column - Always Visible */}
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isDailyProfit ? '#10b981' : '#ef4444' }}>
                     {isDailyProfit ? '+' : ''}{currencySymbol}{fmt(dailyProfitVal, 0, 0)}
                 </span>
                 <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isDailyProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
                     {isDailyProfit ? '▲' : '▼'}{fmt(dailyProfitPct)}%
                 </span>
-            </div >
+            </div>
 
-            {/* Total P&L Column */}
-            < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isTotalProfit ? '#10b981' : '#ef4444' }}>
-                    {isTotalProfit ? '▲' : '▼'}{fmt(totalProfitPct)}%
-                </span>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isTotalProfit ? '#10b981' : '#ef4444', opacity: 0.6 }}>
-                    {isTotalProfit ? '+' : ''}{currencySymbol}{fmt(totalProfitVal, 0, 0)}
-                </span>
-            </div >
+            {/* Total P&L Column - Hidden when Editing */}
+            {!isEditing && (
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isTotalProfit ? '#10b981' : '#ef4444' }}>
+                        {isTotalProfit ? '▲' : '▼'}{fmt(totalProfitPct)}%
+                    </span>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isTotalProfit ? '#10b981' : '#ef4444', opacity: 0.6 }}>
+                        {isTotalProfit ? '+' : ''}{currencySymbol}{fmt(totalProfitVal, 0, 0)}
+                    </span>
+                </div>
+            )}
 
-            {/* Actions Column */}
-            < div style={{ textAlign: 'right' }}>
+            {/* Actions Column - Expanded when Editing */}
+            <div style={{
+                textAlign: 'right',
+                gridColumn: isEditing ? '6 / span 2' : 'auto',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                height: '100%'
+            }}>
                 {isOwner && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
                         {isEditing ? (
                             <>
                                 <button
                                     onClick={handleSave}
+                                    disabled={isSaving}
                                     style={{
-                                        background: 'none', border: 'none',
-                                        color: '#10b981', cursor: 'pointer', padding: '0.4rem',
-                                        borderRadius: '0.3rem'
+                                        background: '#10b981', border: 'none',
+                                        color: '#000', cursor: 'pointer', padding: '0.4rem 0.8rem',
+                                        borderRadius: '0.3rem', fontSize: '0.8rem', fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', gap: '4px'
                                     }}
-                                    title="Save changes"
+                                    title="Save"
                                 >
-                                    {isSaving ? "..." : <Save size={14} />}
+                                    {isSaving ? "..." : <><Save size={14} /> Save</>}
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setIsEditing(false); }}
                                     style={{
-                                        background: 'none', border: 'none',
-                                        color: '#ef4444', cursor: 'pointer', padding: '0.4rem',
-                                        borderRadius: '0.3rem'
+                                        background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)',
+                                        color: 'var(--text-primary)', cursor: 'pointer', padding: '0.4rem 0.8rem',
+                                        borderRadius: '0.3rem', fontSize: '0.8rem', fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', gap: '4px'
                                     }}
-                                    title="Cancel"
+                                    title="Discard"
                                 >
-                                    <X size={14} />
+                                    <X size={14} /> Discard
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    style={{
+                                        background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        color: '#ef4444', cursor: 'pointer', padding: '0.4rem 0.6rem',
+                                        borderRadius: '0.3rem',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}
+                                    title="Delete Asset"
+                                >
+                                    <Trash2 size={16} />
                                 </button>
                             </>
                         ) : (
                             <button
-                                onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsEditing(true);
+                                    setEditName(asset.name || "");
+                                    setEditSymbol(asset.symbol);
+                                    setEditQty(asset.quantity);
+                                    setEditCost(asset.buyPrice);
+                                }}
                                 style={{
                                     background: 'none', border: 'none',
                                     color: 'var(--text-muted)',
@@ -343,8 +422,8 @@ function AssetTableRow({
                         )}
                     </div>
                 )}
-            </div >
-        </div >
+            </div>
+        </div>
     );
 }
 
@@ -900,6 +979,7 @@ function AssetGroup({
 
 
 export default function Dashboard({ username, isOwner, totalValueEUR, assets, isBlurred }: DashboardProps) {
+    const router = useRouter();
     // Initialize items with default sort (Weight Descending)
     const [items, setItems] = useState<AssetDisplay[]>([]);
     const [orderedGroups, setOrderedGroups] = useState<string[]>([]);
@@ -1027,10 +1107,9 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
     }
 
     const handleDelete = async (assetId: string) => {
-        if (confirm("Are you sure you want to delete this asset?")) {
-            await deleteAsset(assetId);
-            window.location.reload();
-        }
+        // Confirmation is handled by the child component calling this
+        await deleteAsset(assetId);
+        router.refresh();
     };
 
 

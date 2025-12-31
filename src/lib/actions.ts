@@ -184,10 +184,12 @@ export async function deleteAsset(assetId: string) {
 
 const UpdateAssetSchema = z.object({
     quantity: z.coerce.number().positive(),
-    buyPrice: z.coerce.number().nonnegative(), // Cost can be 0 hypothetically (gift) but usually positive
+    buyPrice: z.coerce.number().nonnegative(),
+    name: z.string().optional(),
+    symbol: z.string().toUpperCase().optional(),
 });
 
-export async function updateAsset(assetId: string, data: { quantity: number; buyPrice: number }) {
+export async function updateAsset(assetId: string, data: { quantity: number; buyPrice: number; name?: string; symbol?: string }) {
     const session = await auth();
     if (!session?.user?.email) return { error: "Not authenticated" };
 
@@ -212,6 +214,8 @@ export async function updateAsset(assetId: string, data: { quantity: number; buy
             data: {
                 quantity: validated.data.quantity,
                 buyPrice: validated.data.buyPrice,
+                ...(validated.data.name && { name: validated.data.name }),
+                ...(validated.data.symbol && { symbol: validated.data.symbol }),
             }
         });
 
