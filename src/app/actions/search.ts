@@ -25,7 +25,7 @@ export async function searchSymbolsAction(query: string): Promise<SymbolOption[]
         }));
 
     // Inject CASH option if query matches a supported currency
-    const upperQuery = query.toUpperCase();
+    const upperQuery = query.toLocaleUpperCase('tr-TR');
     const currencies = ["USD", "EUR", "TRY", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY"];
 
     // Check if query is a currency code
@@ -100,7 +100,7 @@ export async function searchSymbolsAction(query: string): Promise<SymbolOption[]
     // If we have a "Strong Equity Match" (Stock where symbol or name includes query),
     // we filter out derivative ETFs/Funds that just have the query in their name.
 
-    const queryUpper = query.toUpperCase();
+    const queryUpper = query.toLocaleUpperCase('tr-TR');
     const hasStrongEquityMatch = mappedResults.some(r =>
         r.type === 'STOCK' &&
         (r.symbol.toUpperCase().startsWith(queryUpper) || (r.rawName || '').startsWith(queryUpper))
