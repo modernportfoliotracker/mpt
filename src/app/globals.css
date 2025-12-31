@@ -295,67 +295,65 @@ body.light .glass-input:focus {
   .asset-table-grid {
     display: grid !important;
     /*
-      Grid Template: 3 Columns
-      Col 1: Asset Info (Wide)
-      Col 2: Price / Cost (Right Aligned)
-      Col 3: Value / Total P&L (Right Aligned)
+      Grid Template: 4 Columns Compact
+      Col 1: Asset (Name Left)
+      Col 2: Price / Cost (Right)
+      Col 3: Value / Total Cost (Right)
+      Col 4: P&L Amount / % (Right)
     */
-    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1.2fr) !important;
-    grid-template-rows: auto auto !important;
-    /* Two logical rows within the grid items */
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1.1fr) !important;
+    grid-template-rows: auto !important;
+    /* Single visual row container, text stacked inside */
     align-items: center !important;
-    padding: 0.6rem 0.2rem !important;
+    padding: 0.5rem 0.2rem !important;
     border: none !important;
     background: transparent !important;
     border-bottom: 1px solid var(--glass-border) !important;
     width: 100% !important;
     margin: 0 !important;
-    gap: 0.2rem !important;
+    gap: 0.15rem !important;
     height: auto !important;
   }
 
   /* -------------------------------------------------------------
-     COLUMN 1: ASSET INFO (Spans 2 visual rows via flex column inside)
+     COLUMN 1: ASSET INFO
      ------------------------------------------------------------- */
   .asset-table-grid>div:nth-child(1) {
     grid-column: 1;
-    grid-row: 1 / span 2;
-    /* Span full height */
+    grid-row: 1;
     width: 100% !important;
     display: flex;
     align-items: center;
     overflow: hidden;
     min-width: 0;
-    /* Critical for flex child truncation */
   }
 
   .asset-table-grid>div:nth-child(1)>div:first-child {
-    width: 2rem !important;
-    /* Slightly larger logo */
-    height: 2rem !important;
+    width: 1.8rem !important;
+    height: 1.8rem !important;
+    margin-right: 0.4rem !important;
   }
 
   .asset-table-grid>div:nth-child(1) span {
-    font-size: 0.8rem !important;
+    font-size: 0.75rem !important;
     font-weight: 700 !important;
   }
 
-  /* Subtitle (Ticker) adjustments if needed */
+  /* Subtitle (Ticker) */
   .asset-table-grid>div:nth-child(1) span:nth-of-type(2) {
-    font-size: 0.7rem !important;
+    font-size: 0.65rem !important;
     opacity: 0.6;
-    font-weight: 500 !important;
+    display: block;
+    /* Ensure it wraps if needed or stays under */
   }
 
 
   /* -------------------------------------------------------------
      COLUMN 2: PRICE (Top) & COST (Bottom)
      ------------------------------------------------------------- */
-  /* PRICE Cell */
   .asset-table-grid>div:nth-child(2) {
     grid-column: 2;
     grid-row: 1;
-    /* Top Row */
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-end !important;
@@ -364,30 +362,25 @@ body.light .glass-input:focus {
     line-height: 1.1;
   }
 
-  /* Show Current Price (Primary) */
+  /* Current Price */
   .asset-table-grid>div:nth-child(2)>span:nth-of-type(1) {
-    font-size: 0.75rem !important;
-    font-weight: 600 !important;
-    display: block !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
   }
 
-  /* Show Avg Cost (Secondary) - RE-ENABLED for Mobile */
+  /* Unit Cost */
   .asset-table-grid>div:nth-child(2)>span:nth-of-type(2) {
     display: block !important;
-    /* Unhide */
     font-size: 0.65rem !important;
     opacity: 0.5;
-    margin-top: 2px;
   }
 
   /* -------------------------------------------------------------
-     COLUMN 3: VALUE (Top) & TOTAL P&L (Bottom)
+     COLUMN 3: VALUE (Top) & TOTAL COST (Bottom)
      ------------------------------------------------------------- */
-  /* VALUE Cell - using the 'Value' column div */
   .asset-table-grid>div:nth-child(4) {
     grid-column: 3;
     grid-row: 1;
-    /* Top Row */
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-end !important;
@@ -396,45 +389,46 @@ body.light .glass-input:focus {
     line-height: 1.1;
   }
 
-  /* Total Value (Primary) */
+  /* Total Value */
   .asset-table-grid>div:nth-child(4)>span:nth-of-type(1) {
-    font-size: 0.8rem !important;
+    font-size: 0.75rem !important;
     font-weight: 800 !important;
-    display: block !important;
   }
 
-  /* Hide "Total" Label */
+  /* Total Cost (New visible element) */
   .asset-table-grid>div:nth-child(4)>span:nth-of-type(2) {
-    display: none !important;
-  }
-
-  /* TOTAL P&L Cell - Moved to be under Value */
-  .asset-table-grid>div:nth-child(6) {
-    grid-column: 3;
-    grid-row: 2;
-    /* Bottom Row */
-    display: flex !important;
-    flex-direction: row !important;
-    /* Percent + Amount on same line? Or stacked? Request implied strict alignment */
-    /* Let's try side-by-side for P&L to save vertical space, or stack small */
-    justify-content: flex-end !important;
-    align-items: center !important;
-    gap: 4px;
-    text-align: right !important;
-    margin-top: 2px;
-  }
-
-  /* P&L Amount (Primary) - Unhide */
-  .asset-table-grid>div:nth-child(6)>span:nth-of-type(1) {
     display: block !important;
     font-size: 0.65rem !important;
-    font-weight: 600 !important;
+    opacity: 0.5;
   }
 
-  /* P&L Percent (Secondary) */
+  /* -------------------------------------------------------------
+     COLUMN 4: P&L AMOUNT (Top) & PERCENT (Bottom)
+     ------------------------------------------------------------- */
+  .asset-table-grid>div:nth-child(6) {
+    grid-column: 4;
+    grid-row: 1;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    text-align: right !important;
+    line-height: 1.1;
+    margin: 0 !important;
+  }
+
+  /* P&L Amount */
+  .asset-table-grid>div:nth-child(6)>span:nth-of-type(1) {
+    display: block !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+  }
+
+  /* P&L % */
   .asset-table-grid>div:nth-child(6)>span:nth-of-type(2) {
     font-size: 0.65rem !important;
     opacity: 0.9;
+    font-weight: 600 !important;
   }
 
 

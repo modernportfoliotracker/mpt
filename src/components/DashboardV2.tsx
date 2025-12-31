@@ -262,7 +262,7 @@ function AssetTableRow({
             {/* Value Column */}
             < div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(displayTotalValue, 0, 0)}</span>
-                <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>Total</span>
+                <span className="cost-basis-display" style={{ fontSize: '0.7rem', opacity: 0.5 }}>{currencySymbol}{fmt(displayCostBasis, 0, 0)}</span>
             </div >
 
             {/* Daily P&L Column */}
