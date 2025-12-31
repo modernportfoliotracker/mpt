@@ -364,9 +364,9 @@ body.light .glass-input:focus {
   }
 
   .asset-table-grid>div:nth-child(1)>div:first-child {
-    width: auto !important;
-    height: auto !important;
-    margin-right: 0.5rem !important;
+    width: 1.8rem !important;
+    height: 1.8rem !important;
+    margin-right: 0.4rem !important;
     align-items: center !important;
   }
 

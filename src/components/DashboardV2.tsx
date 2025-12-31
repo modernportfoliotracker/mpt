@@ -188,10 +188,7 @@ function AssetTableRow({
         >
             {/* Asset Column */}
             < div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                    <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size="2rem" />
-                    <span className="mobile-only" style={{ fontSize: '0.65rem', fontWeight: 800, opacity: 0.9, lineHeight: 1 }}>{asset.quantity < 1000 ? asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 1 }) : (asset.quantity / 1000).toFixed(1) + 'k'}</span>
-                </div>
+                <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size="2rem" />
                 <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                     <span style={{
                         fontSize: '0.85rem',
@@ -203,7 +200,11 @@ function AssetTableRow({
                     }}>
                         {companyName}
                     </span>
-                    <span style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>{asset.symbol}</span>
+                    <span style={{ fontSize: '0.7rem', opacity: 0.5, fontWeight: 500 }}>
+                        x{asset.quantity >= 10000
+                            ? (asset.quantity / 1000).toFixed(1) + 'K'
+                            : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                    </span>
                 </div>
             </div >
 
