@@ -58,6 +58,20 @@ export async function searchSymbolsAction(query: string): Promise<SymbolOption[]
         });
     }
 
+    // SILVER / GÜMÜŞ Special Handling
+    const silverKeywords = ["GUMUS", "GÜMÜŞ", "SILVER", "XAG", "XAGTRY"];
+    if (silverKeywords.some(k => upperQuery.includes(k))) {
+        mappedResults.unshift({
+            symbol: 'XAGTRY',
+            fullName: 'GR Gümüş',
+            exchange: 'Forex',
+            type: 'COMMODITY',
+            currency: 'TRY',
+            country: 'Turkey',
+            rawName: 'GR GUMUS'
+        });
+    }
+
     // Check for TEFAS Fund (if query is 3 letters)
     if (upperQuery.length === 3) {
         // Try fetching it to see if it exists
@@ -95,7 +109,7 @@ export async function searchSymbolsAction(query: string): Promise<SymbolOption[]
     if (hasStrongEquityMatch) {
         return mappedResults.filter(r => {
             // Always keep stocks and special types
-            if (r.type === 'STOCK' || r.type === 'GOLD' || r.type === 'CASH' || r.exchange === 'TEFAS') return true;
+            if (r.type === 'STOCK' || r.type === 'GOLD' || r.type === 'COMMODITY' || r.type === 'CASH' || r.exchange === 'TEFAS') return true;
 
             // For others (ETF, FUND), exclude if they are likely just tracking the equity
             // e.g. "YieldMax NVDA Option...", "GraniteShares 3x Long NVIDIA"

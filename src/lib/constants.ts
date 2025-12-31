@@ -6,5 +6,6 @@ export const ASSET_COLORS: Record<string, string> = {
     'REAL_ESTATE': '#f43f5e', // Rose
     'BOND': '#3b82f6',   // Blue
     'FUND': '#14b8a6',   // Teal
+    'COMMODITY': '#9ca3af', // Gray/Silver
     'DEFAULT': '#94a3b8' // Slate (Fallback)
 };

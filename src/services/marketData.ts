@@ -36,6 +36,7 @@ export async function getAssetName(symbol: string, type: string, exchange?: stri
         // If symbol has hyphen, let's try searching it directly first.
 
         if (symbol === 'GAUTRY') return "GR Altın";
+        if (symbol === 'XAGTRY') return "GR Gümüş";
 
         const results = await searchYahoo(searchSymbol);
 
@@ -98,6 +99,8 @@ export async function getMarketPrice(symbol: string, type: string, exchange?: st
             searchSymbol = 'GC=F'; // Gold Futures (working ticker)
         } else if (symbol === 'GAUTRY') {
             searchSymbol = 'XAUTRY=X'; // Ounce Gold in TRY
+        } else if (symbol === 'XAGTRY') {
+            searchSymbol = 'XAGTRY=X'; // Ounce Silver in TRY
         } else if (type === 'STOCK' && !symbol.includes('.')) {
             // Check if it's a known BIST stock or trust Yahoo to find it? 
             // Better to try direct symbol first.
@@ -133,12 +136,43 @@ export async function getMarketPrice(symbol: string, type: string, exchange?: st
             }
         }
 
+        // Special handling for XAGTRY (Silver) fallback
+        if (symbol === 'XAGTRY' && (!quote || !quote.regularMarketPrice)) {
+            // Fallback: Calculate via XAGUSD * USDTRY / 31.10
+            try {
+                const [xag, sif, usdtry] = await Promise.all([
+                    getYahooQuote('XAGUSD=X'),
+                    getYahooQuote('SI=F'), // Silver Futures
+                    getYahooQuote('USDTRY=X')
+                ]);
+
+                const silverPrice = xag?.regularMarketPrice || sif?.regularMarketPrice;
+                const parity = usdtry?.regularMarketPrice;
+
+                if (silverPrice && parity) {
+                    const gramPrice = (silverPrice * parity) / 31.1034768;
+                    return {
+                        price: gramPrice,
+                        timestamp: new Date().toLocaleString('tr-TR'),
+                        currency: 'TRY'
+                    };
+                }
+            } catch (err) {
+                console.error("Failed to calculate derived silver price", err);
+            }
+        }
+
         if (quote && quote.regularMarketPrice) {
             let price = quote.regularMarketPrice;
 
             // Conversion for Gram Gold (if we got the primary XAUTRY quote)
             if (symbol === 'GAUTRY') {
                 // XAUTRY=X is per Ounce. 1 Ounce = 31.1035 Grams
+                price = price / 31.1034768;
+            }
+
+            // Conversion for Gram Silver
+            if (symbol === 'XAGTRY') {
                 price = price / 31.1034768;
             }
 
