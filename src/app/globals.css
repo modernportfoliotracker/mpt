@@ -531,6 +531,11 @@ body.light .glass-input:focus {
     min-width: 0 !important;
     padding: 0.3rem 0.5rem !important;
   }
+
+  /* Reduce vertical gap in positions header on mobile */
+  .positions-header {
+    margin-bottom: 0.2rem !important;
+  }
 }
 
 /* Default Currency Width */
