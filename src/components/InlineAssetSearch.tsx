@@ -60,7 +60,13 @@ export function InlineAssetSearch() {
                 const data = await getMarketPriceAction(selectedSymbol.symbol, selectedSymbol.type, selectedSymbol.exchange);
                 if (data) {
                     setMarketData(data);
-                    setBuyPrice(data.price.toString());
+                    // Format price to max 2 decimals for cleaner UI
+                    // But keep precision if it's very small (crypto)
+                    let formattedPrice = data.price.toString();
+                    if (data.price > 1) {
+                        formattedPrice = data.price.toFixed(2);
+                    }
+                    setBuyPrice(formattedPrice);
                 }
             };
             fetchPrice();

@@ -110,13 +110,18 @@ export async function getMarketPrice(symbol: string, type: string, exchange?: st
         if (symbol === 'GAUTRY' && (!quote || !quote.regularMarketPrice)) {
             // Fallback: Calculate via XAUUSD * USDTRY / 31.10
             try {
-                const [xau, usdtry] = await Promise.all([
+                // Try XAUUSD first, then GC=F (Gold Futures)
+                const [xau, gcf, usdtry] = await Promise.all([
                     getYahooQuote('XAUUSD=X'),
+                    getYahooQuote('GC=F'), // Fallback for gold price
                     getYahooQuote('USDTRY=X')
                 ]);
 
-                if (xau?.regularMarketPrice && usdtry?.regularMarketPrice) {
-                    const gramPrice = (xau.regularMarketPrice * usdtry.regularMarketPrice) / 31.1034768;
+                const goldPrice = xau?.regularMarketPrice || gcf?.regularMarketPrice;
+                const parity = usdtry?.regularMarketPrice;
+
+                if (goldPrice && parity) {
+                    const gramPrice = (goldPrice * parity) / 31.1034768;
                     return {
                         price: gramPrice,
                         timestamp: new Date().toLocaleString('tr-TR'),
