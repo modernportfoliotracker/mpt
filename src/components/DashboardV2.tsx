@@ -206,7 +206,8 @@ function AssetTableRow({
                     </span>
                     {/* Mobile Subtitle: Quantity formatted */}
                     <span className="mobile-only" style={{ fontSize: '0.65rem', opacity: 0.5 }}>
-                        x{asset.quantity >= 10000
+                        <span style={{ fontSize: '0.7em', opacity: 0.8, marginRight: '1px' }}>x</span>
+                        {asset.quantity >= 10000
                             ? (asset.quantity / 1000).toFixed(1) + 'K'
                             : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 2 })}
                     </span>
@@ -289,7 +290,7 @@ function AssetTableRow({
                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isTotalProfit ? '#10b981' : '#ef4444' }}>
                     {isTotalProfit ? '▲' : '▼'}{fmt(totalProfitPct)}%
                 </span>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isTotalProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isTotalProfit ? '#10b981' : '#ef4444', opacity: 0.6 }}>
                     {isTotalProfit ? '+' : ''}{currencySymbol}{fmt(totalProfitVal, 0, 0)}
                 </span>
             </div >
