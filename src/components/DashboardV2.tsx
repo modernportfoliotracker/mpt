@@ -200,7 +200,10 @@ function AssetTableRow({
                     }}>
                         {companyName}
                     </span>
-                    <span style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>{asset.symbol}</span>
+                    <span style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>
+                        <span className="mobile-only" style={{ display: 'inline', fontWeight: 700, color: 'var(--text-primary)', opacity: 0.9 }}>{asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 4 })} • </span>
+                        {asset.symbol}
+                    </span>
                 </div>
             </div >
 
@@ -1329,7 +1332,10 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                             borderRadius: '0.5rem 0.5rem 0 0',
                                             alignItems: 'center'
                                         }}>
-                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em' }}>ASSET</div>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em' }}>
+                                                ASSET
+                                                <span className="mobile-only" style={{ opacity: 0.7, fontSize: '0.6rem' }}> / QTY</span>
+                                            </div>
 
                                             {/* Price / Cost Header */}
                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
