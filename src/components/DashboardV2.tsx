@@ -188,7 +188,10 @@ function AssetTableRow({
         >
             {/* Asset Column */}
             < div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
-                <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size="2rem" />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                    <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size="2rem" />
+                    <span className="mobile-only" style={{ fontSize: '0.65rem', fontWeight: 800, opacity: 0.9, lineHeight: 1 }}>{asset.quantity < 1000 ? asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 1 }) : (asset.quantity / 1000).toFixed(1) + 'k'}</span>
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                     <span style={{
                         fontSize: '0.85rem',
@@ -200,10 +203,7 @@ function AssetTableRow({
                     }}>
                         {companyName}
                     </span>
-                    <span style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>
-                        <span className="mobile-only" style={{ display: 'inline', fontWeight: 700, color: 'var(--text-primary)', opacity: 0.9 }}>{asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 4 })} • </span>
-                        {asset.symbol}
-                    </span>
+                    <span style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>{asset.symbol}</span>
                 </div>
             </div >
 
@@ -1332,10 +1332,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                             borderRadius: '0.5rem 0.5rem 0 0',
                                             alignItems: 'center'
                                         }}>
-                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em' }}>
-                                                ASSET
-                                                <span className="mobile-only" style={{ opacity: 0.7, fontSize: '0.6rem' }}> / QTY</span>
-                                            </div>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em' }}>ASSET</div>
 
                                             {/* Price / Cost Header */}
                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
