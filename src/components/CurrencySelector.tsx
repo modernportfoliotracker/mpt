@@ -49,9 +49,9 @@ export function CurrencySelector() {
                     justifyContent: 'space-between'
                 }}
             >
-                <span className="desktop-only">{currency === 'ORG' ? 'ORG CCY' : currency}</span>
+                <span className="desktop-only">{currency === 'ORG' ? 'Symbol' : getCurrencySymbol(currency)}</span>
                 <span className="mobile-only" style={{ fontSize: '0.9rem', fontWeight: 800 }}>
-                    {currency === 'ORG' ? 'ORG' : getCurrencySymbol(currency)}
+                    {currency === 'ORG' ? 'Symbol' : getCurrencySymbol(currency)}
                 </span>
                 <ChevronDown size={14} style={{ opacity: 0.7, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
             </button>
@@ -62,7 +62,7 @@ export function CurrencySelector() {
                     position: 'absolute',
                     top: '110%',
                     right: 0,
-                    width: '120px',
+                    width: '140px', // Increased width for "Default (Symbol)"
                     padding: '0.3rem',
                     borderRadius: '0.5rem',
                     zIndex: 100,
@@ -72,34 +72,40 @@ export function CurrencySelector() {
                     background: 'var(--bg-secondary)', // More solid background for readability
                     boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
                 }}>
-                    {currencies.map(curr => (
-                        <button
-                            key={curr}
-                            onClick={() => {
-                                setCurrency(curr);
-                                setIsOpen(false);
-                            }}
-                            style={{
-                                background: currency === curr ? 'var(--bg-active)' : 'transparent',
-                                border: 'none',
-                                borderRadius: '0.3rem',
-                                color: currency === curr ? 'var(--text-active)' : 'var(--text-secondary)',
-                                padding: '0.4rem 0.8rem',
-                                fontSize: '0.8rem',
-                                fontWeight: currency === curr ? 700 : 500,
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                width: '100%',
-                                transition: 'all 0.1s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between'
-                            }}
-                        >
-                            {curr === 'ORG' ? 'ORG CCY' : curr}
-                            {currency === curr && <span style={{ color: 'var(--accent)', fontSize: '0.7rem' }}>●</span>}
-                        </button>
-                    ))}
+                    {currencies.map(curr => {
+                        let label = '';
+                        if (curr === 'ORG') label = 'Default (Symbol)';
+                        else label = `${curr} (${getCurrencySymbol(curr)})`;
+
+                        return (
+                            <button
+                                key={curr}
+                                onClick={() => {
+                                    setCurrency(curr);
+                                    setIsOpen(false);
+                                }}
+                                style={{
+                                    background: currency === curr ? 'var(--bg-active)' : 'transparent',
+                                    border: 'none',
+                                    borderRadius: '0.3rem',
+                                    color: currency === curr ? 'var(--text-active)' : 'var(--text-secondary)',
+                                    padding: '0.4rem 0.8rem',
+                                    fontSize: '0.8rem',
+                                    fontWeight: currency === curr ? 700 : 500,
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    width: '100%',
+                                    transition: 'all 0.1s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between'
+                                }}
+                            >
+                                {label}
+                                {currency === curr && <span style={{ color: 'var(--accent)', fontSize: '0.7rem' }}>●</span>}
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </div>

@@ -856,12 +856,12 @@ const AssetGroupHeader = ({
                 {/* Icon Circle */}
                 <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: '1.8rem', height: '1.8rem', // Slightly smaller
-                    background: 'rgba(255, 255, 255, 0.1)',
+                    width: '1.8rem', height: '1.8rem',
+                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', // Vivid Gradient (Indigo -> Purple)
                     borderRadius: '50%',
                     color: '#fff',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                    border: '1px solid rgba(255, 255, 255, 0.2)', // Subtle inner border
+                    boxShadow: '0 2px 6px rgba(99, 102, 241, 0.4)' // Glow effect
                 }}>
                     {getGroupIcon(type)}
                 </div>
