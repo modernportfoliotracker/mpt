@@ -18,6 +18,23 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var storedTheme = localStorage.getItem('theme');
+                  var systemTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                  var theme = storedTheme || systemTheme;
+                  
+                  if (theme === 'light') {
+                    document.body.classList.add('light');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
         <ThemeProvider>
           <main className="container" style={{ paddingTop: '6rem' }}>
             {children}

@@ -987,6 +987,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
     const [viewMode, setViewMode] = useState<"list" | "grid" | "detailed">("list");
     const [gridColumns, setGridColumns] = useState<1 | 2>(2);
     const [timePeriod, setTimePeriod] = useState("ALL");
+    const [isTimeSelectorHovered, setIsTimeSelectorHovered] = useState(false);
     const { currency: globalCurrency } = useCurrency();
     const positionsViewCurrency = globalCurrency;
 
@@ -1280,27 +1281,58 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
 
                                 {/* 1. Time Period Selector */}
-                                {/* DESKTOP: Buttons */}
-                                <div className="desktop-only" style={{ display: 'flex', gap: '0.1rem', background: 'var(--glass-bg)', borderRadius: '0.5rem', padding: '0.2rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                    {TIME_PERIODS.map(period => (
-                                        <button
-                                            key={period}
-                                            onClick={() => setTimePeriod(period)}
-                                            style={{
-                                                background: timePeriod === period ? 'var(--bg-active)' : 'transparent',
-                                                border: 'none',
-                                                borderRadius: '0.4rem',
-                                                color: timePeriod === period ? 'var(--text-active)' : 'var(--text-muted)',
-                                                padding: '0.25rem 0.5rem',
-                                                fontSize: '0.7rem',
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s'
-                                            }}
-                                        >
-                                            {period}
-                                        </button>
-                                    ))}
+                                {/* DESKTOP: Buttons (Modern Hover-Expand) */}
+                                <div
+                                    className="desktop-only"
+                                    onMouseEnter={() => setIsTimeSelectorHovered(true)}
+                                    onMouseLeave={() => setIsTimeSelectorHovered(false)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        background: 'var(--glass-shine)',
+                                        backdropFilter: 'blur(10px)',
+                                        borderRadius: '2rem',
+                                        padding: '0.3rem',
+                                        border: '1px solid var(--glass-border)',
+                                        boxShadow: isTimeSelectorHovered ? '0 4px 20px rgba(0,0,0,0.1)' : 'none',
+                                        transition: 'all 0.3s ease',
+                                        height: '2.4rem' // Fixed height for smoothness
+                                    }}
+                                >
+                                    {TIME_PERIODS.map(period => {
+                                        const isActive = timePeriod === period;
+                                        const isVisible = isTimeSelectorHovered || isActive;
+
+                                        return (
+                                            <button
+                                                key={period}
+                                                onClick={() => setTimePeriod(period)}
+                                                style={{
+                                                    background: isActive ? '#6366f1' : 'transparent',
+                                                    border: 'none',
+                                                    borderRadius: '1.5rem',
+                                                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                                                    // Animation props
+                                                    maxWidth: isVisible ? '100px' : '0px',
+                                                    padding: isVisible ? '0.3rem 0.8rem' : '0',
+                                                    margin: isVisible ? '0 2px' : '0',
+                                                    opacity: isVisible ? 1 : 0,
+                                                    overflow: 'hidden',
+
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: isActive ? 700 : 600,
+                                                    cursor: 'pointer',
+                                                    whiteSpace: 'nowrap',
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}
+                                            >
+                                                {period}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
 
                                 {/* MOBILE: Dropdown */}
