@@ -830,19 +830,19 @@ const AssetGroupHeader = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0.8rem 1rem',
-                background: 'rgba(20, 20, 30, 0.4)', // Darker, distinct background
-                border: '1px solid rgba(255, 255, 255, 0.05)',
+                padding: '0.5rem 0.8rem', // More compact padding
+                background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.05))', // Vivid Indigo Tint
+                border: '1px solid rgba(99, 102, 241, 0.2)', // Matching border
                 borderBottom: isExpanded ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
-                borderRadius: isExpanded ? '0.8rem 0.8rem 0 0' : '0.8rem',
+                borderRadius: isExpanded ? '0.6rem 0.6rem 0 0' : '0.6rem', // Slightly smaller radius
                 marginBottom: isExpanded ? '0' : '0.5rem',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 userSelect: 'none',
-                boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.2)' : 'none'
+                boxShadow: isHovered ? '0 4px 15px rgba(99, 102, 241, 0.15)' : 'none'
             }}
         >
             {/* Left Side: Group Info */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 {/* Expander Arrow */}
                 <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -850,39 +850,40 @@ const AssetGroupHeader = ({
                     transition: 'transform 0.3s ease',
                     transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
                 }}>
-                    <ChevronDown size={18} />
+                    <ChevronDown size={16} /> {/* Smaller Icon */}
                 </div>
 
                 {/* Icon Circle */}
                 <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: '2rem', height: '2rem',
-                    background: 'rgba(99, 102, 241, 0.1)',
+                    width: '1.8rem', height: '1.8rem', // Slightly smaller
+                    background: 'rgba(255, 255, 255, 0.1)',
                     borderRadius: '50%',
-                    color: '#818cf8',
-                    border: '1px solid rgba(99, 102, 241, 0.2)'
+                    color: '#fff',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
                 }}>
                     {getGroupIcon(type)}
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                    <span style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.02em', lineHeight: 1 }}>{type}</span>
-                    <span style={{ fontSize: '0.7rem', opacity: 0.5, fontWeight: 500 }}>{count} Assets</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.01em', lineHeight: 1.1 }}>{type}</span>
+                    <span style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 500 }}>{count} Assets</span>
                 </div>
             </div>
 
             {/* Right Side: Totals (Percent First, then Amount) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                 <div style={{
-                    fontSize: '0.9rem',
+                    fontSize: '0.8rem',
                     fontWeight: 700,
-                    color: 'var(--text-primary)',
-                    background: 'rgba(255,255,255,0.05)',
-                    padding: '0.3rem 0.8rem',
-                    borderRadius: '2rem',
-                    border: '1px solid rgba(255,255,255,0.05)'
+                    color: '#fff',
+                    background: '#6366f1', // Solid vivid badge
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '1rem',
+                    boxShadow: '0 2px 4px rgba(99, 102, 241, 0.3)'
                 }}>
-                    {percentage.toFixed(1)}%
+                    {percentage.toFixed(0)}% {/* Integer Percentage */}
                 </div>
 
                 <div style={{
@@ -890,7 +891,7 @@ const AssetGroupHeader = ({
                     alignItems: 'baseline',
                     gap: '0.4rem',
                 }}>
-                    <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(totalEUR * rate)}</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(totalEUR * rate)}</span>
                 </div>
             </div>
         </div>
