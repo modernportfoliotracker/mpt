@@ -20,6 +20,7 @@ import {
     SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
+    horizontalListSortingStrategy,
     rectSortingStrategy,
     useSortable
 } from '@dnd-kit/sortable';
@@ -27,7 +28,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { ASSET_COLORS } from "@/lib/constants";
 import { getLogoUrl } from "@/lib/logos";
 const TIME_PERIODS = ["1D", "1W", "1M", "YTD", "1Y", "ALL"];
-import { Bitcoin, Wallet, TrendingUp, PieChart, Gem, Coins, Layers, LayoutGrid, List, Save, X, Trash2, Settings, LayoutTemplate, Grid, Check, ChevronDown, ChevronRight } from "lucide-react";
+import { Bitcoin, Wallet, TrendingUp, PieChart, Gem, Coins, Layers, LayoutGrid, List, Save, X, Trash2, Settings, LayoutTemplate, Grid, Check, ChevronDown, ChevronRight, GripVertical, SlidersHorizontal } from "lucide-react";
 import { DetailedAssetCard } from "./DetailedAssetCard";
 import { getCompanyName } from "@/lib/companyNames";
 import { formatEUR, formatNumber } from "@/lib/formatters";
@@ -98,6 +99,57 @@ const AssetLogo = ({ symbol, logoUrl, size = '3.5rem' }: { symbol: string, logoU
 import { AssetDisplay } from "@/lib/types";
 import { SortableAssetRow, SortableGroup, SortableAssetCard } from "./SortableWrappers";
 
+// Column Configurations
+type ColumnId = 'TYPE' | 'NAME' | 'TICKER' | 'EXCHANGE' | 'CURRENCY' | 'PRICE' | 'HOLDINGS' | 'VALUE' | 'PL' | 'EARNINGS';
+
+interface ColumnConfig {
+    id: ColumnId;
+    label: string;
+    isDefault: boolean;
+}
+
+const ALL_COLUMNS: ColumnConfig[] = [
+    { id: 'TYPE', label: 'Type', isDefault: false },
+    { id: 'NAME', label: 'Name', isDefault: true },
+    { id: 'TICKER', label: 'Ticker', isDefault: false },
+    { id: 'EXCHANGE', label: 'Exchange', isDefault: false },
+    { id: 'CURRENCY', label: 'Currency', isDefault: false },
+    { id: 'PRICE', label: 'Price', isDefault: true },
+    { id: 'HOLDINGS', label: 'Holdings', isDefault: true },
+    { id: 'VALUE', label: 'Value', isDefault: true },
+    { id: 'PL', label: 'P&L', isDefault: true },
+    { id: 'EARNINGS', label: 'Next Earnings Date', isDefault: false },
+];
+
+const DraggableHeader = ({ id, children, onToggle }: { id: string, children: React.ReactNode, onToggle?: () => void }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        cursor: isDragging ? 'grabbing' : 'grab',
+        zIndex: isDragging ? 20 : 1,
+        opacity: isDragging ? 0.8 : 1
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className={`col-${id.toLowerCase()}`}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                <span {...attributes} {...listeners} style={{ cursor: 'grab', opacity: 0.3 }}><GripVertical size={12} /></span>
+                {children}
+            </div>
+        </div>
+    );
+};
+
+
 // Local Sortable Wrappers removed (Imported)
 
 // Component for a single row in the data table (List View)
@@ -108,7 +160,8 @@ function AssetTableRow({
     isOwner,
     onDelete,
     timeFactor,
-    rowIndex
+    rowIndex,
+    columns = ['NAME', 'PRICE', 'HOLDINGS', 'VALUE', 'PL']
 }: {
     asset: AssetDisplay,
     positionsViewCurrency: string,
@@ -116,7 +169,8 @@ function AssetTableRow({
     isOwner: boolean,
     onDelete: (id: string) => void,
     timeFactor: number,
-    rowIndex?: number
+    rowIndex?: number,
+    columns?: ColumnId[]
 }) {
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
@@ -183,6 +237,247 @@ function AssetTableRow({
     const logoUrl = getLogoUrl(asset.symbol, asset.type, asset.exchange);
     const companyName = getCompanyName(asset.symbol, asset.type, asset.name);
 
+    const renderCell = (colId: ColumnId) => {
+        switch (colId) {
+            case 'TYPE':
+                return (
+                    <div className="col-type" style={{ fontSize: '0.7rem', opacity: 0.6, fontWeight: 500 }}>
+                        {asset.type}
+                    </div>
+                );
+            case 'NAME':
+                return (
+                    <div className="col-name" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
+                        <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size="2rem" />
+                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: isEditing ? '4px' : '0' }}>
+                            {isEditing ? (
+                                <>
+                                    <input
+                                        type="text"
+                                        value={editName}
+                                        onChange={(e) => setEditName(e.target.value)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        placeholder="Asset Name"
+                                        style={{
+                                            background: 'var(--glass-shine)',
+                                            border: '1px solid var(--glass-border)',
+                                            borderRadius: '3px',
+                                            color: 'var(--text-primary)',
+                                            fontSize: '0.8rem',
+                                            padding: '2px 4px',
+                                            width: '100%',
+                                        }}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={editSymbol}
+                                        onChange={(e) => setEditSymbol(e.target.value.toUpperCase())}
+                                        onClick={(e) => e.stopPropagation()}
+                                        placeholder="Ticker"
+                                        style={{
+                                            background: 'var(--glass-shine)',
+                                            border: '1px solid var(--glass-border)',
+                                            borderRadius: '3px',
+                                            color: 'var(--text-primary)',
+                                            fontSize: '0.7rem',
+                                            padding: '2px 4px',
+                                            width: '80px',
+                                            textTransform: 'uppercase'
+                                        }}
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <span style={{
+                                        fontSize: '0.85rem',
+                                        fontWeight: 600,
+                                        color: 'var(--text-primary)',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis'
+                                    }}>
+                                        {companyName}
+                                    </span>
+                                    {/* Subtitle logic preserved */}
+                                    <span className="desktop-only" style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>
+                                        {asset.symbol}
+                                    </span>
+                                    <span className="mobile-only" style={{ fontSize: '0.65rem', opacity: 0.5 }}>
+                                        <span style={{ fontSize: '0.7em', opacity: 0.8, marginRight: '1px' }}>x</span>
+                                        {asset.quantity >= 10000
+                                            ? (asset.quantity / 1000).toFixed(1) + 'K'
+                                            : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 2 })}
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                );
+            case 'TICKER':
+                return (
+                    <div className="col-ticker" style={{ fontSize: '0.85rem', fontWeight: 600 }}>{asset.symbol}</div>
+                );
+            case 'EXCHANGE':
+                return (
+                    <div className="col-exchange" style={{ fontSize: '0.75rem', opacity: 0.6 }}>{asset.exchange || '-'}</div>
+                );
+            case 'CURRENCY':
+                return (
+                    <div className="col-currency" style={{ fontSize: '0.75rem', opacity: 0.6 }}>{asset.currency || '-'}</div>
+                );
+            case 'PRICE':
+                return (
+                    <div className="col-price" style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{currencySymbol}{fmt(displayPrice)}</span>
+                        {isEditing ? (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '2px' }}>
+                                <input
+                                    type="number"
+                                    value={editCost}
+                                    onChange={(e) => setEditCost(Number(e.target.value))}
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{
+                                        width: '60px',
+                                        background: 'var(--glass-shine)',
+                                        border: '1px solid var(--glass-border)',
+                                        borderRadius: '3px',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '0.7rem',
+                                        padding: '2px 4px',
+                                        textAlign: 'right'
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>{currencySymbol}{fmt(displayAvgPrice)}</span>
+                        )}
+                    </div>
+                );
+            case 'HOLDINGS':
+                return (
+                    <div className="col-holdings" style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                        {isEditing ? (
+                            <input
+                                type="number"
+                                value={editQty}
+                                onChange={(e) => setEditQty(Number(e.target.value))}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    width: '80px',
+                                    background: 'var(--glass-shine)',
+                                    border: '1px solid var(--glass-border)',
+                                    borderRadius: '3px',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '0.85rem',
+                                    padding: '4px 8px',
+                                    textAlign: 'right',
+                                    marginLeft: 'auto'
+                                }}
+                            />
+                        ) : (
+                            <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{asset.quantity.toLocaleString()}</span>
+                        )}
+                    </div>
+                );
+            case 'VALUE':
+                return (
+                    <div className="col-value" style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(displayTotalValue, 0, 0)}</span>
+                        <span className="cost-basis-display" style={{ fontSize: '0.7rem', opacity: 0.5 }}>{currencySymbol}{fmt(displayCostBasis, 0, 0)}</span>
+                    </div>
+                );
+            case 'PL':
+                return (
+                    <div className="col-pl" style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
+                        {isEditing ? (
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '2px' }}>
+                                <button
+                                    onClick={handleSave}
+                                    disabled={isSaving}
+                                    style={{
+                                        background: '#10b981', border: 'none',
+                                        color: '#000', cursor: 'pointer', padding: '0.4rem',
+                                        borderRadius: '0.3rem',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}
+                                    title="Save"
+                                >
+                                    {isSaving ? "..." : <Check size={16} />}
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setIsEditing(false); }}
+                                    style={{
+                                        background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)',
+                                        color: 'var(--text-primary)', cursor: 'pointer', padding: '0.4rem',
+                                        borderRadius: '0.3rem',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}
+                                    title="Discard"
+                                >
+                                    <X size={16} />
+                                </button>
+                                <button
+                                    onClick={handleDelete}
+                                    style={{
+                                        background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                                        color: '#ef4444', cursor: 'pointer', padding: '0.4rem',
+                                        borderRadius: '0.3rem',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    }}
+                                    title="Delete Asset"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="pl-action-container">
+                                <div className="pl-column-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
+                                        {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
+                                    </span>
+                                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
+                                        {isPeriodProfit ? '+' : ''}{currencySymbol}{fmt(periodProfitVal, 0, 0)}
+                                    </span>
+                                </div>
+                                {isOwner && (
+                                    <div className="action-buttons-container">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setIsEditing(true);
+                                                setEditName(asset.name || "");
+                                                setEditSymbol(asset.symbol);
+                                                setEditQty(asset.quantity);
+                                                setEditCost(asset.buyPrice);
+                                            }}
+                                            style={{
+                                                background: 'var(--glass-shine)',
+                                                border: '1px solid var(--glass-border)',
+                                                color: 'var(--text-primary)',
+                                                cursor: 'pointer', padding: '0.4rem',
+                                                borderRadius: '0.3rem',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+                                            }}
+                                            title="Edit Asset"
+                                        >
+                                            <Settings size={14} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                );
+            case 'EARNINGS':
+                return (
+                    <div className="col-earnings" style={{ fontSize: '0.75rem', opacity: 0.4, textAlign: 'right' }}>-</div>
+                );
+            default:
+                return null;
+        }
+    }
+
     return (
         <div
             className="asset-table-grid table-row-hover"
@@ -196,218 +491,11 @@ function AssetTableRow({
                             : 'transparent'
             }}
         >
-            {/* Asset Column */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
-                <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size="2rem" />
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: isEditing ? '4px' : '0' }}>
-                    {isEditing ? (
-                        <>
-                            <input
-                                type="text"
-                                value={editName}
-                                onChange={(e) => setEditName(e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
-                                placeholder="Asset Name"
-                                style={{
-                                    background: 'var(--glass-shine)',
-                                    border: '1px solid var(--glass-border)',
-                                    borderRadius: '3px',
-                                    color: 'var(--text-primary)',
-                                    fontSize: '0.8rem',
-                                    padding: '2px 4px',
-                                    width: '100%',
-                                }}
-                            />
-                            <input
-                                type="text"
-                                value={editSymbol}
-                                onChange={(e) => setEditSymbol(e.target.value.toUpperCase())}
-                                onClick={(e) => e.stopPropagation()}
-                                placeholder="Ticker"
-                                style={{
-                                    background: 'var(--glass-shine)',
-                                    border: '1px solid var(--glass-border)',
-                                    borderRadius: '3px',
-                                    color: 'var(--text-primary)',
-                                    fontSize: '0.7rem',
-                                    padding: '2px 4px',
-                                    width: '80px',
-                                    textTransform: 'uppercase'
-                                }}
-                            />
-                        </>
-                    ) : (
-                        <>
-                            <span style={{
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
-                                color: 'var(--text-primary)',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis'
-                            }}>
-                                {companyName}
-                            </span>
-                            {/* Desktop Subtitle: Ticker */}
-                            <span className="desktop-only" style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>
-                                {asset.symbol}
-                            </span>
-                            {/* Mobile Subtitle: Quantity formatted */}
-                            <span className="mobile-only" style={{ fontSize: '0.65rem', opacity: 0.5 }}>
-                                <span style={{ fontSize: '0.7em', opacity: 0.8, marginRight: '1px' }}>x</span>
-                                {asset.quantity >= 10000
-                                    ? (asset.quantity / 1000).toFixed(1) + 'K'
-                                    : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 2 })}
-                            </span>
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* Price Column */}
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{currencySymbol}{fmt(displayPrice)}</span>
-                {isEditing ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '2px' }}>
-                        <input
-                            type="number"
-                            value={editCost}
-                            onChange={(e) => setEditCost(Number(e.target.value))}
-                            onClick={(e) => e.stopPropagation()}
-                            style={{
-                                width: '60px',
-                                background: 'var(--glass-shine)',
-                                border: '1px solid var(--glass-border)',
-                                borderRadius: '3px',
-                                color: 'var(--text-primary)',
-                                fontSize: '0.7rem',
-                                padding: '2px 4px',
-                                textAlign: 'right'
-                            }}
-                        />
-                    </div>
-                ) : (
-                    <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>{currencySymbol}{fmt(displayAvgPrice)}</span>
-                )}
-            </div>
-
-            {/* Holdings Column */}
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                {isEditing ? (
-                    <input
-                        type="number"
-                        value={editQty}
-                        onChange={(e) => setEditQty(Number(e.target.value))}
-                        onClick={(e) => e.stopPropagation()}
-                        style={{
-                            width: '80px',
-                            background: 'var(--glass-shine)',
-                            border: '1px solid var(--glass-border)',
-                            borderRadius: '3px',
-                            color: 'var(--text-primary)',
-                            fontSize: '0.85rem',
-                            padding: '4px 8px',
-                            textAlign: 'right',
-                            marginLeft: 'auto'
-                        }}
-                    />
-                ) : (
-                    <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{asset.quantity.toLocaleString()}</span>
-                )}
-            </div>
-
-            {/* Value Column */}
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(displayTotalValue, 0, 0)}</span>
-                <span className="cost-basis-display" style={{ fontSize: '0.7rem', opacity: 0.5 }}>{currencySymbol}{fmt(displayCostBasis, 0, 0)}</span>
-            </div>
-
-            {/* Consolidated P&L / Actions Column (Col 5) */}
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
-                {isEditing ? (
-                    /* Edit Mode: Show Action Buttons */
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '2px' }}>
-                        <button
-                            onClick={handleSave}
-                            disabled={isSaving}
-                            style={{
-                                background: '#10b981', border: 'none',
-                                color: '#000', cursor: 'pointer', padding: '0.4rem',
-                                borderRadius: '0.3rem',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}
-                            title="Save"
-                        >
-                            {isSaving ? "..." : <Check size={16} />}
-                        </button>
-                        <button
-                            onClick={(e) => { e.stopPropagation(); setIsEditing(false); }}
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)',
-                                color: 'var(--text-primary)', cursor: 'pointer', padding: '0.4rem',
-                                borderRadius: '0.3rem',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}
-                            title="Discard"
-                        >
-                            <X size={16} />
-                        </button>
-                        <button
-                            onClick={handleDelete}
-                            style={{
-                                background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                                color: '#ef4444', cursor: 'pointer', padding: '0.4rem',
-                                borderRadius: '0.3rem',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}
-                            title="Delete Asset"
-                        >
-                            <Trash2 size={16} />
-                        </button>
-                    </div>
-                ) : (
-                    /* Normal Mode: P&L with Slide Reveal Actions */
-                    <div className="pl-action-container">
-                        {/* P&L Content (Slides Left on Hover) */}
-                        <div className="pl-column-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
-                                {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
-                            </span>
-                            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
-                                {isPeriodProfit ? '+' : ''}{currencySymbol}{fmt(periodProfitVal, 0, 0)}
-                            </span>
-                        </div>
-
-                        {/* Edit Button (Slides In on Hover) */}
-                        {isOwner && (
-                            <div className="action-buttons-container">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setIsEditing(true);
-                                        setEditName(asset.name || "");
-                                        setEditSymbol(asset.symbol);
-                                        setEditQty(asset.quantity);
-                                        setEditCost(asset.buyPrice);
-                                    }}
-                                    style={{
-                                        background: 'var(--glass-shine)',
-                                        border: '1px solid var(--glass-border)',
-                                        color: 'var(--text-primary)',
-                                        cursor: 'pointer', padding: '0.4rem',
-                                        borderRadius: '0.3rem',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
-                                    }}
-                                    title="Edit Asset"
-                                >
-                                    <Settings size={14} />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
+            {columns.map(colId => (
+                <React.Fragment key={colId}>
+                    {renderCell(colId)}
+                </React.Fragment>
+            ))}
         </div>
     );
 }
@@ -872,24 +960,32 @@ const AssetGroupHeader = ({
                 </div>
             </div>
 
-            {/* Right Side: Totals (Percent First, then Amount) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            {/* Right Side: Totals (Aligned Columns) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                {/* Percentage Badge - Fixed Width for Vertical Alignment */}
                 <div style={{
+                    width: '3rem', // Fixed width to align vertically
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     fontSize: '0.8rem',
                     fontWeight: 700,
                     color: '#fff',
-                    background: '#6366f1', // Solid vivid badge
-                    padding: '0.15rem 0.5rem',
+                    background: '#6366f1',
+                    padding: '0.15rem 0',
                     borderRadius: '1rem',
                     boxShadow: '0 2px 4px rgba(99, 102, 241, 0.3)'
                 }}>
-                    {percentage.toFixed(0)}% {/* Integer Percentage */}
+                    {percentage.toFixed(0)}%
                 </div>
 
+                {/* Amount - Fixed Min-Width for Vertical Alignment */}
                 <div style={{
+                    minWidth: '6rem', // Fixed min-width so percentage doesn't shift
                     display: 'flex',
-                    alignItems: 'baseline',
-                    gap: '0.4rem',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end', // Right align
+                    textAlign: 'right'
                 }}>
                     <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(totalEUR * rate)}</span>
                 </div>
@@ -931,7 +1027,8 @@ function AssetGroup({
     isOwner,
     onDelete,
     timeFactor,
-    dragHandleProps
+    dragHandleProps,
+    columns
 }: {
     type: string,
     assets: AssetDisplay[],
@@ -941,7 +1038,8 @@ function AssetGroup({
     isOwner: boolean,
     onDelete: (id: string) => void,
     timeFactor: number,
-    dragHandleProps?: any
+    dragHandleProps?: any,
+    columns?: ColumnId[]
 }) {
     const [isExpanded, setIsExpanded] = useState(false); // Default: Collapsed
 
@@ -988,6 +1086,7 @@ function AssetGroup({
                                 isOwner={isOwner}
                                 onDelete={onDelete}
                                 timeFactor={timeFactor}
+                                columns={columns}
                             />
                         </SortableAssetRow>
                     ))}
@@ -1111,6 +1210,11 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
     const [isTimeSelectorHovered, setIsTimeSelectorHovered] = useState(false);
     const [isGroupingSelectorHovered, setIsGroupingSelectorHovered] = useState(false);
     const [isViewSelectorHovered, setIsViewSelectorHovered] = useState(false);
+
+    // Column State
+    const [activeColumns, setActiveColumns] = useState<ColumnId[]>(ALL_COLUMNS.filter(c => c.isDefault).map(c => c.id));
+    const [isAdjustListOpen, setIsAdjustListOpen] = useState(false);
+
     const { currency: globalCurrency } = useCurrency();
     const positionsViewCurrency = globalCurrency;
 
@@ -1222,6 +1326,17 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                 setOrderedGroups(arrayMove(orderedGroups, oldIndex, newIndex));
             }
         } else if (active.id !== over.id) {
+            // Check if dragging columns config
+            const isColumnDrag = ALL_COLUMNS.some(c => c.id === active.id);
+            if (isColumnDrag) {
+                setActiveColumns((items) => {
+                    const oldIndex = items.indexOf(active.id as ColumnId);
+                    const newIndex = items.indexOf(over.id as ColumnId);
+                    return arrayMove(items, oldIndex, newIndex);
+                });
+                return;
+            }
+
             setItems((items) => {
                 const oldIndex = items.findIndex((item) => item.id === active.id);
                 const newIndex = items.findIndex((item) => item.id === over.id);
@@ -1599,6 +1714,95 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                         );
                                     })}
                                 </div>
+
+                                {/* 3. Adjust List Button (Only in List View) */}
+                                {viewMode === 'list' && (
+                                    <div style={{ position: 'relative' }}>
+                                        <button
+                                            onClick={() => setIsAdjustListOpen(!isAdjustListOpen)}
+                                            style={{
+                                                background: isAdjustListOpen ? 'var(--bg-active)' : 'var(--glass-shine)',
+                                                border: '1px solid var(--glass-border)',
+                                                borderRadius: '2rem',
+                                                width: '2.4rem',
+                                                height: '2.4rem',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                color: isAdjustListOpen ? 'var(--accent)' : 'var(--text-secondary)',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            title="Adjust List Columns"
+                                        >
+                                            <SlidersHorizontal size={14} />
+                                        </button>
+
+                                        {isAdjustListOpen && (
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: '100%',
+                                                right: 0,
+                                                marginTop: '0.5rem',
+                                                background: 'var(--bg-secondary)',
+                                                border: '1px solid var(--glass-border)',
+                                                borderRadius: '0.8rem',
+                                                padding: '0.8rem',
+                                                width: '250px',
+                                                zIndex: 1000,
+                                                boxShadow: '0 10px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)',
+                                                backdropFilter: 'blur(20px)',
+                                            }}>
+                                                <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.8rem', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <span>Table Columns</span>
+                                                    <span style={{ fontSize: '0.65rem', opacity: 0.5, fontWeight: 500 }}>Drag headers to reorder</span>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                    {ALL_COLUMNS.map(col => {
+                                                        const isVisible = activeColumns.includes(col.id);
+                                                        return (
+                                                            <div key={col.id}
+                                                                onClick={() => {
+                                                                    if (isVisible) {
+                                                                        if (activeColumns.length > 1) { // Prevent hiding all
+                                                                            setActiveColumns(activeColumns.filter(id => id !== col.id));
+                                                                        }
+                                                                    } else {
+                                                                        setActiveColumns([...activeColumns, col.id]);
+                                                                    }
+                                                                }}
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'space-between',
+                                                                    padding: '0.5rem',
+                                                                    borderRadius: '0.4rem',
+                                                                    background: isVisible ? 'var(--bg-active)' : 'transparent',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s',
+                                                                    border: isVisible ? '1px solid var(--glass-border)' : '1px solid transparent'
+                                                                }}
+                                                            >
+                                                                <span style={{ fontSize: '0.8rem', color: isVisible ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: isVisible ? 600 : 400 }}>{col.label}</span>
+                                                                <div style={{
+                                                                    width: '14px', height: '14px',
+                                                                    borderRadius: '3px',
+                                                                    border: isVisible ? 'none' : '2px solid var(--text-secondary)',
+                                                                    background: isVisible ? 'var(--accent)' : 'transparent',
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                    opacity: isVisible ? 1 : 0.5
+                                                                }}>
+                                                                    {isVisible && <Check size={10} color="#fff" strokeWidth={4} />}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                <div style={{ marginTop: '0.8rem', paddingTop: '0.6rem', borderTop: '1px solid var(--glass-border)', fontSize: '0.7rem', opacity: 0.5, textAlign: 'center' }}>
+                                                    Drag column headers in the table to reorder.
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -1613,29 +1817,18 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                             borderRadius: '0.5rem 0.5rem 0 0',
                                             alignItems: 'center'
                                         }}>
-                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em' }}>ASSET</div>
-
-                                            {/* Price / Cost Header */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>PRICE</span>
-                                                <span className="mobile-only" style={{ fontSize: '0.6rem', fontWeight: 500, opacity: 0.4 }}>COST</span>
-                                            </div>
-
-                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>HOLDINGS</div>
-
-                                            {/* Value / Total Cost Header */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>VALUE</span>
-                                                <span className="mobile-only" style={{ fontSize: '0.6rem', fontWeight: 500, opacity: 0.4 }}>TOTAL COST</span>
-                                            </div>
-
-                                            {/* P&L % / Amount Header (Merged) */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>{pLTitle}</span>
-                                                <span className="mobile-only" style={{ fontSize: '0.6rem', fontWeight: 500, opacity: 0.4 }}>PERCENT / AMOUNT</span>
-                                            </div>
-
-                                            <div></div>
+                                            <SortableContext items={activeColumns} strategy={horizontalListSortingStrategy}>
+                                                {activeColumns.map(colId => {
+                                                    const colDef = ALL_COLUMNS.find(c => c.id === colId);
+                                                    return (
+                                                        <DraggableHeader key={colId} id={colId}>
+                                                            <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>
+                                                                {colDef?.label.toUpperCase()}
+                                                            </span>
+                                                        </DraggableHeader>
+                                                    );
+                                                })}
+                                            </SortableContext>
                                         </div>
                                     )}
 
@@ -1652,6 +1845,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                         isOwner={isOwner}
                                                         onDelete={handleDelete}
                                                         timeFactor={getTimeFactor()}
+                                                        columns={activeColumns}
                                                     />
                                                 </SortableGroup>
                                             ))}
@@ -1668,6 +1862,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                         onDelete={handleDelete}
                                                         timeFactor={getTimeFactor()}
                                                         rowIndex={index}
+                                                        columns={activeColumns}
                                                     />
                                                 </SortableAssetRow>
                                             ))}

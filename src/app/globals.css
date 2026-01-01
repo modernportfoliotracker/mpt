@@ -402,9 +402,9 @@ body.light .glass-input:focus {
   }
 
   /* -------------------------------------------------------------
-     COLUMN 1: ASSET INFO
+     COLUMN 1: ASSET INFO (.col-name)
      ------------------------------------------------------------- */
-  .asset-table-grid>div:nth-child(1) {
+  .col-name {
     grid-column: 1;
     grid-row: 1;
     width: 100% !important;
@@ -414,27 +414,27 @@ body.light .glass-input:focus {
     min-width: 0;
   }
 
-  .asset-table-grid>div:nth-child(1)>div:first-child {
+  .col-name>div:first-child {
     width: 1.8rem !important;
     height: 1.8rem !important;
     margin-right: 0.4rem !important;
     align-items: center !important;
   }
 
-  .asset-table-grid>div:nth-child(1) span {
+  .col-name span {
     font-size: 0.75rem !important;
     font-weight: 700 !important;
   }
 
   /* Subtitle (Ticker) */
-  .asset-table-grid>div:nth-child(1) span:nth-of-type(2) {
+  .col-name span:nth-of-type(2) {
     font-size: 0.65rem !important;
     opacity: 0.6;
     display: block;
   }
 
   /* Mobile Subtitle (Quantity) - Ensure it matches Cost/Total Cost style exactly */
-  .asset-table-grid>div:nth-child(1) .mobile-only {
+  .col-name .mobile-only {
     font-size: 0.65rem !important;
     font-weight: 400 !important;
     /* Override the 700 bold from generic span rule */
@@ -444,9 +444,9 @@ body.light .glass-input:focus {
 
 
   /* -------------------------------------------------------------
-     COLUMN 2: PRICE (Top) & COST (Bottom)
+     COLUMN 2: PRICE (Top) & COST (Bottom) (.col-price)
      ------------------------------------------------------------- */
-  .asset-table-grid>div:nth-child(2) {
+  .col-price {
     grid-column: 2;
     grid-row: 1;
     display: flex !important;
@@ -458,22 +458,25 @@ body.light .glass-input:focus {
   }
 
   /* Current Price */
-  .asset-table-grid>div:nth-child(2)>span:nth-of-type(1) {
+  .col-price>span:nth-of-type(1) {
     font-size: 0.7rem !important;
     font-weight: 700 !important;
   }
 
-  /* Unit Cost */
-  .asset-table-grid>div:nth-child(2)>span:nth-of-type(2) {
+  /* Unit Cost (Assuming element structure inside .col-price matches standard view) 
+     Note: In dynamic rendering, we might need to ensure the logic puts Cost in .col-price or visually handles it.
+     The current renderCell('PRICE') does render Price and Cost.
+  */
+  .col-price>span:nth-of-type(2) {
     display: block !important;
     font-size: 0.65rem !important;
     opacity: 0.5;
   }
 
   /* -------------------------------------------------------------
-     COLUMN 3: VALUE (Top) & TOTAL COST (Bottom)
+     COLUMN 3: VALUE (Top) & TOTAL COST (Bottom) (.col-value)
      ------------------------------------------------------------- */
-  .asset-table-grid>div:nth-child(4) {
+  .col-value {
     grid-column: 3;
     grid-row: 1;
     display: flex !important;
@@ -485,22 +488,22 @@ body.light .glass-input:focus {
   }
 
   /* Total Value */
-  .asset-table-grid>div:nth-child(4)>span:nth-of-type(1) {
+  .col-value>span:nth-of-type(1) {
     font-size: 0.75rem !important;
     font-weight: 800 !important;
   }
 
-  /* Total Cost (New visible element) */
-  .asset-table-grid>div:nth-child(4)>span:nth-of-type(2) {
+  /* Total Cost */
+  .col-value>span:nth-of-type(2) {
     display: block !important;
     font-size: 0.65rem !important;
     opacity: 0.5;
   }
 
   /* -------------------------------------------------------------
-     COLUMN 4: P&L AMOUNT (Top) & PERCENT (Bottom)
+     COLUMN 4: P&L AMOUNT (Top) & PERCENT (Bottom) (.col-pl)
      ------------------------------------------------------------- */
-  .asset-table-grid>div:nth-child(5) {
+  .col-pl {
     grid-column: 4;
     grid-row: 1;
     display: flex !important;
@@ -513,14 +516,14 @@ body.light .glass-input:focus {
   }
 
   /* P&L Amount */
-  .asset-table-grid>div:nth-child(5)>span:nth-of-type(1) {
+  .col-pl>span:nth-of-type(1) {
     display: block !important;
     font-size: 0.7rem !important;
     font-weight: 700 !important;
   }
 
   /* P&L % */
-  .asset-table-grid>div:nth-child(5)>span:nth-of-type(2) {
+  .col-pl>span:nth-of-type(2) {
     font-size: 0.65rem !important;
     opacity: 0.9;
     font-weight: 600 !important;
@@ -530,18 +533,17 @@ body.light .glass-input:focus {
   /* -------------------------------------------------------------
      HIDDEN COLUMNS
      ------------------------------------------------------------- */
-  /* Holdings (Col 3 in DOM) - Hidden */
-  .asset-table-grid>div:nth-child(3) {
+  /* Hide columns not used in mobile compact grid */
+  .col-holdings,
+  .col-type,
+  .col-ticker,
+  .col-exchange,
+  .col-currency,
+  .col-earnings {
     display: none !important;
   }
 
-  /* Daily P&L (Col 5 in DOM) - Hidden */
-  /* Daily P&L - OLD RULE REMOVED, now consolidated P&L is child 5 which we show */
-
-  /* Actions (Col 6 in DOM) - Hidden */
-  .asset-table-grid>div:nth-child(6) {
-    display: none !important;
-  }
+  /* Legacy nth-child cleanup handled by removal */
 
 
   /* Asset Group Header Adjustments */
