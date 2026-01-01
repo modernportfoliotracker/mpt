@@ -322,93 +322,88 @@ function AssetTableRow({
                 <span className="cost-basis-display" style={{ fontSize: '0.7rem', opacity: 0.5 }}>{currencySymbol}{fmt(displayCostBasis, 0, 0)}</span>
             </div>
 
-            {/* Consolidated P&L Column - Hidden when Editing */}
-            {!isEditing && (
-                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
-                        {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
-                    </span>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
-                        {isPeriodProfit ? '+' : ''}{currencySymbol}{fmt(periodProfitVal, 0, 0)}
-                    </span>
-                </div>
-            )}
-
-            {/* Actions Column - Expanded when Editing */}
-            <div style={{
-                textAlign: 'right',
-                gridColumn: isEditing ? '5 / span 2' : 'auto',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                alignItems: 'center',
-                height: '100%'
-            }}>
-                {isOwner && (
+            {/* Consolidated P&L / Actions Column (Col 5) */}
+            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
+                {isEditing ? (
+                    /* Edit Mode: Show Action Buttons */
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '2px' }}>
-                        {isEditing ? (
-                            <>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving}
+                            style={{
+                                background: '#10b981', border: 'none',
+                                color: '#000', cursor: 'pointer', padding: '0.4rem',
+                                borderRadius: '0.3rem',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                            title="Save"
+                        >
+                            {isSaving ? "..." : <Check size={16} />}
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsEditing(false); }}
+                            style={{
+                                background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)',
+                                color: 'var(--text-primary)', cursor: 'pointer', padding: '0.4rem',
+                                borderRadius: '0.3rem',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                            title="Discard"
+                        >
+                            <X size={16} />
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            style={{
+                                background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                                color: '#ef4444', cursor: 'pointer', padding: '0.4rem',
+                                borderRadius: '0.3rem',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                            title="Delete Asset"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                ) : (
+                    /* Normal Mode: P&L with Slide Reveal Actions */
+                    <div className="pl-action-container">
+                        {/* P&L Content (Slides Left on Hover) */}
+                        <div className="pl-column-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
+                                {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
+                            </span>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
+                                {isPeriodProfit ? '+' : ''}{currencySymbol}{fmt(periodProfitVal, 0, 0)}
+                            </span>
+                        </div>
+
+                        {/* Edit Button (Slides In on Hover) */}
+                        {isOwner && (
+                            <div className="action-buttons-container">
                                 <button
-                                    onClick={handleSave}
-                                    disabled={isSaving}
-                                    style={{
-                                        background: '#10b981', border: 'none',
-                                        color: '#000', cursor: 'pointer', padding: '0.4rem',
-                                        borderRadius: '0.3rem',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsEditing(true);
+                                        setEditName(asset.name || "");
+                                        setEditSymbol(asset.symbol);
+                                        setEditQty(asset.quantity);
+                                        setEditCost(asset.buyPrice);
                                     }}
-                                    title="Save"
-                                >
-                                    {isSaving ? "..." : <Check size={16} />}
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setIsEditing(false); }}
                                     style={{
-                                        background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)',
-                                        color: 'var(--text-primary)', cursor: 'pointer', padding: '0.4rem',
+                                        background: 'var(--glass-shine)',
+                                        border: '1px solid var(--glass-border)',
+                                        color: 'var(--text-primary)',
+                                        cursor: 'pointer', padding: '0.4rem',
                                         borderRadius: '0.3rem',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
                                     }}
-                                    title="Discard"
+                                    title="Edit Asset"
                                 >
-                                    <X size={16} />
+                                    <Settings size={14} />
                                 </button>
-                                <button
-                                    onClick={handleDelete}
-                                    style={{
-                                        background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                                        color: '#ef4444', cursor: 'pointer', padding: '0.4rem',
-                                        borderRadius: '0.3rem',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}
-                                    title="Delete Asset"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-                            </>
-                        ) : (
-                            <button
-                                className="row-edit-button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsEditing(true);
-                                    setEditName(asset.name || "");
-                                    setEditSymbol(asset.symbol);
-                                    setEditQty(asset.quantity);
-                                    setEditCost(asset.buyPrice);
-                                }}
-                                style={{
-                                    background: 'none', border: 'none',
-                                    color: 'var(--text-muted)',
-                                    cursor: 'pointer', padding: '0.4rem',
-                                    transition: 'all 0.2s',
-                                    borderRadius: '0.3rem'
-                                }}
-                                onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-                                onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; e.currentTarget.style.background = 'none'; }}
-                                title="Edit Asset"
-                            >
-                                <Settings size={14} />
-                            </button>
+                            </div>
                         )}
                     </div>
                 )}

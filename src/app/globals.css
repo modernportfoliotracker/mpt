@@ -219,38 +219,70 @@ body.light .glass-input:focus {
 }
 
 /* Asset Table Responsive Grid */
+/* Asset Table Responsive Grid */
 .asset-table-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 1.8fr) 1fr 1fr 1.1fr 1.2fr 50px;
+  /* Removed 50px last column, merged into last 1.3fr */
+  grid-template-columns: minmax(220px, 1.8fr) 1fr 1fr 1.1fr 1.3fr;
   padding: 0.6rem 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.02);
   align-items: center;
   transition: all 0.3s ease;
 }
 
-/* ROW BUTTON VISIBILITY (Web/Desktop) */
+/* SLIDING REVEAL ANIMATION (Web/Desktop) */
 @media (min-width: 769px) {
-  .row-edit-button {
+
+  /* Container in the last column */
+  .pl-action-container {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    height: 100%;
+    min-height: 2.5rem;
+    /* Ensure height for absolute positioning if needed */
+  }
+
+  /* The P&L Text content */
+  .pl-column-content {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(0);
+  }
+
+  /* The Action Buttons (Edit Trigger) */
+  .action-buttons-container {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translate(120%, -50%);
+    /* Start hidden to right */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
     opacity: 0;
-    transition: opacity 0.2s ease, background 0.2s ease;
+    /* Ensure it sits on top */
+    z-index: 10;
+    display: flex;
+    align-items: center;
   }
 
-  .asset-table-grid:hover .row-edit-button {
-    opacity: 1;
+  /* HOVER STATE ON ROW */
+  .asset-table-grid:hover .pl-column-content {
+    transform: translateX(-40px);
+    /* Slide text left */
   }
-}
 
-/* On mobile, keep it visible or rely on different logic implies touch */
-@media (max-width: 768px) {
-  .row-edit-button {
+  .asset-table-grid:hover .action-buttons-container {
+    transform: translate(0, -50%);
+    /* Slide button in */
     opacity: 1;
-    /* Always visible on mobile if rendered */
   }
 }
 
 .asset-table-header {
   display: grid;
-  grid-template-columns: minmax(220px, 1.8fr) 1fr 1fr 1.1fr 1.2fr 50px;
+  /* Match grid columns */
+  grid-template-columns: minmax(220px, 1.8fr) 1fr 1fr 1.1fr 1.3fr;
   padding: 0 1rem;
   margin-bottom: 0.5rem;
   opacity: 0.6;
