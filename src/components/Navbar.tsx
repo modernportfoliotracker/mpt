@@ -76,19 +76,33 @@ export async function Navbar({ totalBalance, username, isOwner, showPortfolioBut
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <ThemeToggle />
                                 <CurrencySelector />
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0' }}>
-                                    <form action={handleSignOut} style={{ lineHeight: 1 }}>
-                                        <button type="submit" style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 600, padding: 0 }}>
-                                            <LogOut size={16} className="mobile-only" />
-                                            <span className="desktop-only">Sign Out</span>
-                                        </button>
-                                    </form>
-                                    {username && (
-                                        <div className="desktop-only" style={{ fontSize: '0.65rem', opacity: 0.6, color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.2 }}>
-                                            @{username}
+                                <form action={handleSignOut} style={{ margin: 0 }}>
+                                    <button
+                                        type="submit"
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            padding: 0,
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'flex-end',
+                                            gap: '1px',
+                                            textAlign: 'right'
+                                        }}
+                                        className="group"
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                            <LogOut size={16} className="mobile-only" style={{ color: 'var(--text-secondary)' }} />
+                                            <span className="desktop-only" style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', transition: 'color 0.2s' }}>Sign Out</span>
                                         </div>
-                                    )}
-                                </div>
+                                        {username && (
+                                            <div className="desktop-only" style={{ fontSize: '0.65rem', opacity: 0.6, color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.2 }}>
+                                                @{username}
+                                            </div>
+                                        )}
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     ) : (

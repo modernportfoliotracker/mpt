@@ -121,6 +121,19 @@ const ALL_COLUMNS: ColumnConfig[] = [
     { id: 'EARNINGS', label: 'Next Earnings Date', isDefault: false },
 ];
 
+const COL_WIDTHS: Record<ColumnId, string> = {
+    TYPE: '0.6fr',
+    NAME: 'minmax(200px, 1.8fr)',
+    TICKER: '0.6fr',
+    EXCHANGE: '0.7fr',
+    CURRENCY: '0.5fr',
+    PRICE: '1fr',
+    HOLDINGS: '0.9fr',
+    VALUE: '1.1fr',
+    PL: '1.2fr',
+    EARNINGS: '0.9fr'
+};
+
 const DraggableHeader = ({ id, children, onToggle }: { id: string, children: React.ReactNode, onToggle?: () => void }) => {
     const {
         attributes,
@@ -236,6 +249,8 @@ function AssetTableRow({
 
     const logoUrl = getLogoUrl(asset.symbol, asset.type, asset.exchange);
     const companyName = getCompanyName(asset.symbol, asset.type, asset.name);
+
+    const gridTemplate = columns.map(c => COL_WIDTHS[c]).join(' ');
 
     const renderCell = (colId: ColumnId) => {
         switch (colId) {
@@ -482,6 +497,8 @@ function AssetTableRow({
         <div
             className="asset-table-grid table-row-hover"
             style={{
+                display: 'grid',
+                gridTemplateColumns: gridTemplate,
                 background: justUpdated
                     ? 'rgba(16, 185, 129, 0.1)'
                     : isEditing
@@ -1327,11 +1344,13 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
             }
         } else if (active.id !== over.id) {
             // Check if dragging columns config
-            const isColumnDrag = ALL_COLUMNS.some(c => c.id === active.id);
-            if (isColumnDrag) {
+            if (active.id.toString().startsWith('col:')) {
+                const oldId = active.id.toString().replace('col:', '') as ColumnId;
+                const newId = over.id.toString().replace('col:', '') as ColumnId;
+
                 setActiveColumns((items) => {
-                    const oldIndex = items.indexOf(active.id as ColumnId);
-                    const newIndex = items.indexOf(over.id as ColumnId);
+                    const oldIndex = items.indexOf(oldId);
+                    const newIndex = items.indexOf(newId);
                     return arrayMove(items, oldIndex, newIndex);
                 });
                 return;
@@ -1718,23 +1737,40 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                 {/* 3. Adjust List Button (Only in List View) */}
                                 {viewMode === 'list' && (
                                     <div style={{ position: 'relative' }}>
-                                        <button
-                                            onClick={() => setIsAdjustListOpen(!isAdjustListOpen)}
-                                            style={{
-                                                background: isAdjustListOpen ? 'var(--bg-active)' : 'var(--glass-shine)',
-                                                border: '1px solid var(--glass-border)',
-                                                borderRadius: '2rem',
-                                                width: '2.4rem',
-                                                height: '2.4rem',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                color: isAdjustListOpen ? 'var(--accent)' : 'var(--text-secondary)',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s'
-                                            }}
-                                            title="Adjust List Columns"
-                                        >
-                                            <SlidersHorizontal size={14} />
-                                        </button>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            background: 'var(--glass-shine)',
+                                            backdropFilter: 'blur(10px)',
+                                            borderRadius: '2rem',
+                                            padding: '0.3rem',
+                                            border: '1px solid var(--glass-border)',
+                                            height: '2.4rem',
+                                            transition: 'all 0.3s ease'
+                                        }}>
+                                            <button
+                                                onClick={() => setIsAdjustListOpen(!isAdjustListOpen)}
+                                                style={{
+                                                    background: isAdjustListOpen ? '#6366f1' : 'transparent',
+                                                    border: 'none',
+                                                    borderRadius: '1.5rem',
+                                                    color: isAdjustListOpen ? '#fff' : 'var(--text-secondary)',
+                                                    padding: '0.3rem 0.6rem',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: isAdjustListOpen ? 700 : 600,
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '0.4rem',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                title="Adjust List Columns"
+                                            >
+                                                <SlidersHorizontal size={14} />
+                                                {isAdjustListOpen && <span>Adjust</span>}
+                                            </button>
+                                        </div>
 
                                         {isAdjustListOpen && (
                                             <div style={{
@@ -1746,14 +1782,29 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                 border: '1px solid var(--glass-border)',
                                                 borderRadius: '0.8rem',
                                                 padding: '0.8rem',
-                                                width: '250px',
+                                                width: '260px',
                                                 zIndex: 1000,
                                                 boxShadow: '0 10px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1)',
                                                 backdropFilter: 'blur(20px)',
                                             }}>
                                                 <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.8rem', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                     <span>Table Columns</span>
-                                                    <span style={{ fontSize: '0.65rem', opacity: 0.5, fontWeight: 500 }}>Drag headers to reorder</span>
+                                                    <button
+                                                        onClick={() => setActiveColumns(['NAME', 'PRICE', 'HOLDINGS', 'VALUE', 'PL'])}
+                                                        style={{
+                                                            fontSize: '0.65rem',
+                                                            opacity: 0.7,
+                                                            fontWeight: 600,
+                                                            background: 'rgba(255,255,255,0.1)',
+                                                            border: 'none',
+                                                            borderRadius: '0.3rem',
+                                                            padding: '0.2rem 0.5rem',
+                                                            cursor: 'pointer',
+                                                            color: 'var(--text-primary)'
+                                                        }}
+                                                    >
+                                                        Reset
+                                                    </button>
                                                 </div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                                     {ALL_COLUMNS.map(col => {
@@ -1775,10 +1826,10 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                     justifyContent: 'space-between',
                                                                     padding: '0.5rem',
                                                                     borderRadius: '0.4rem',
-                                                                    background: isVisible ? 'var(--bg-active)' : 'transparent',
+                                                                    background: isVisible ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
                                                                     cursor: 'pointer',
                                                                     transition: 'all 0.2s',
-                                                                    border: isVisible ? '1px solid var(--glass-border)' : '1px solid transparent'
+                                                                    border: isVisible ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid transparent'
                                                                 }}
                                                             >
                                                                 <span style={{ fontSize: '0.8rem', color: isVisible ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: isVisible ? 600 : 400 }}>{col.label}</span>
@@ -1786,7 +1837,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                     width: '14px', height: '14px',
                                                                     borderRadius: '3px',
                                                                     border: isVisible ? 'none' : '2px solid var(--text-secondary)',
-                                                                    background: isVisible ? 'var(--accent)' : 'transparent',
+                                                                    background: isVisible ? '#6366f1' : 'transparent',
                                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                                     opacity: isVisible ? 1 : 0.5
                                                                 }}>
@@ -1810,18 +1861,20 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                         <div style={{ minHeight: '400px' }}>
                             {viewMode === "list" ? (
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    {/* Table Header Only Shows if Ungrouped or as a reference */}
-                                    {!isGroupingEnabled && (
+                                    {/* Table Header Always Show in List View */}
+                                    {true && (
                                         <div className="asset-table-header glass-panel" style={{
                                             borderBottom: '1px solid var(--glass-border)',
                                             borderRadius: '0.5rem 0.5rem 0 0',
-                                            alignItems: 'center'
+                                            alignItems: 'center',
+                                            display: 'grid',
+                                            gridTemplateColumns: activeColumns.map(c => COL_WIDTHS[c]).join(' ')
                                         }}>
-                                            <SortableContext items={activeColumns} strategy={horizontalListSortingStrategy}>
+                                            <SortableContext items={activeColumns.map(c => `col:${c}`)} strategy={horizontalListSortingStrategy}>
                                                 {activeColumns.map(colId => {
                                                     const colDef = ALL_COLUMNS.find(c => c.id === colId);
                                                     return (
-                                                        <DraggableHeader key={colId} id={colId}>
+                                                        <DraggableHeader key={colId} id={`col:${colId}`}>
                                                             <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>
                                                                 {colDef?.label.toUpperCase()}
                                                             </span>
