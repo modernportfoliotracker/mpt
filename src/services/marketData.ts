@@ -13,6 +13,9 @@ export interface PriceResult {
     price: number;
     timestamp: string;
     currency?: string;
+    change24h?: number;
+    changePercent?: number;
+    previousClose?: number;
 }
 
 export async function getAssetName(symbol: string, type: string, exchange?: string): Promise<string | null> {
@@ -176,10 +179,25 @@ export async function getMarketPrice(symbol: string, type: string, exchange?: st
                 price = price / 31.1034768;
             }
 
+            // Calculate change if previous close is available
+            let change24h = 0;
+            let previousClose = quote.regularMarketPreviousClose;
+
+            if (previousClose) {
+                // Adjust previous close for Gram Gold/Silver unit conversion
+                if (symbol === 'GAUTRY' || symbol === 'XAGTRY') {
+                    previousClose = previousClose / 31.1034768;
+                }
+                change24h = price - previousClose;
+            }
+
             return {
                 price: price,
                 timestamp: quote.regularMarketTime ? new Date(quote.regularMarketTime).toLocaleString('tr-TR') : new Date().toLocaleString('tr-TR'),
-                currency: quote.currency
+                currency: quote.currency,
+                previousClose: previousClose,
+                change24h: change24h,
+                changePercent: previousClose ? (change24h / previousClose) * 100 : 0
             };
         }
     } catch (error) {

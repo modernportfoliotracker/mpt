@@ -12,6 +12,8 @@ export interface AssetDisplay {
     exchange?: string;
     sector?: string;
     country?: string;
+    dailyChange?: number;
+    dailyChangePercentage?: number;
     platform?: string;
 
 }

@@ -144,25 +144,13 @@ export async function getYahooQuote(symbol: string): Promise<YahooQuote | null> 
             return null;
         }
 
-        // --- CLOSING PRICE LOGIC START ---
-        // Determine the effective closing price based on market state
-        // If Market is OPEN (REGULAR) -> Use Previous Close
-        // If Market is CLOSED -> Use Regular Market Price (which is the close)
-
-        let effectivePrice = result.regularMarketPrice;
-        const state = result.marketState; // 'REGULAR', 'CLOSED', 'PRE', 'POST', etc.
-
-        if (state === 'REGULAR' || state === 'PRE' || state === 'PREPRE') {
-            // Market is currently active or opening, use Previous Close to be safe and consistent
-            if (result.regularMarketPreviousClose) {
-                effectivePrice = result.regularMarketPreviousClose;
-                console.log(`[YahooApi] ${symbol} Market is ${state}. Using Previous Close: ${effectivePrice}`);
-            }
-        } else {
-            // Market is CLOSED or POST market, so regularMarketPrice is the closing price of the day
-            console.log(`[YahooApi] ${symbol} Market is ${state}. Using Latest/Closing Price: ${effectivePrice}`);
-        }
-        // --- CLOSING PRICE LOGIC END ---
+        // --- CLOSING PRICE LOGIC REMOVED ---
+        // We always want the LATEST available price (regularMarketPrice).
+        // If the market is open, this is the live price.
+        // If the market is closed, this is the closing price.
+        // We strictly avoid returning 'Previous Close' as 'Current Price' because it causes
+        // stale data to be displayed during active market sessions (especially for Crypto).
+        const effectivePrice = result.regularMarketPrice;
 
         const quote: YahooQuote = {
             symbol: result.symbol,

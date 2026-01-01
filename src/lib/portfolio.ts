@@ -2,22 +2,7 @@ import { getMarketPrice, convertCurrency, getAssetName } from "@/services/market
 import { prisma } from "@/lib/prisma";
 import { cleanAssetName } from "@/lib/companyNames";
 
-export interface AssetDisplay {
-    id: string;
-    symbol: string;
-    name?: string | null;
-    type: string;
-    quantity: number;
-    buyPrice: number;
-    currency: string;
-    currentPrice: number;
-    totalValueEUR: number;
-    plPercentage: number;
-    exchange?: string;
-    sector?: string;
-    country?: string;
-    platform?: string;
-}
+import { AssetDisplay } from "@/lib/types";
 
 export async function getPortfolioMetrics(assets: any[]): Promise<{ totalValueEUR: number, assetsWithValues: AssetDisplay[] }> {
     // Process Assets: Fetch current prices and calculate values
@@ -84,6 +69,10 @@ export async function getPortfolioMetrics(assets: any[]): Promise<{ totalValueEU
             ? ((totalValueNative - costBasisNative) / costBasisNative) * 100
             : 0;
 
+        // 5. Calculate Daily Change (Real 1D P&L)
+        const dailyChangeNative = (priceData?.change24h || 0) * asset.quantity;
+        const dailyChangeEUR = await convertCurrency(dailyChangeNative, activeCurrency, "EUR");
+
         return {
             id: asset.id,
             symbol: asset.symbol,
@@ -95,6 +84,8 @@ export async function getPortfolioMetrics(assets: any[]): Promise<{ totalValueEU
             currentPrice,
             totalValueEUR,
             plPercentage,
+            dailyChange: dailyChangeEUR,
+            dailyChangePercentage: priceData?.changePercent || 0,
             exchange: asset.exchange || undefined,
             sector: asset.sector || undefined,
             country: asset.country || undefined,
