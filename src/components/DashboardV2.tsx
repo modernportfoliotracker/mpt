@@ -121,7 +121,7 @@ const ALL_COLUMNS: ColumnConfig[] = [
     { id: 'VALUE', label: 'Value', isDefault: true },
     { id: 'PL', label: 'P&L', isDefault: true },
     { id: 'EARNINGS', label: 'Next Earnings Date', isDefault: false },
-    { id: 'PORTFOLIO_NAME', label: 'Portfolio Name', isDefault: false },
+    { id: 'PORTFOLIO_NAME', label: 'Portfolio', isDefault: false },
 ];
 
 const COL_WIDTHS: Record<ColumnId, string> = {
