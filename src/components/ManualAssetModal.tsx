@@ -208,6 +208,24 @@ export function ManualAssetModal({ onClose, initialSymbol = "" }: ManualAssetMod
                             </div>
                         </div>
 
+                        {/* Portfolio Name - Always Visible (Moved out of Advanced) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                            <label style={{ fontSize: '0.8rem', opacity: 0.7 }}>Portfolio Name</label>
+                            <input
+                                value={customGroup} onChange={e => setCustomGroup(e.target.value)}
+                                placeholder="(Optional) Add asset to your specific portfolio"
+                                className="glass-input"
+                                style={{ padding: '0.6rem', fontSize: '0.9rem', width: '100%', opacity: 0.7 }}
+                                list="portfolio-options"
+                            />
+                            <datalist id="portfolio-options">
+                                <option value="Long Term" />
+                                <option value="Short Term" />
+                                <option value="Retirement" />
+                                <option value="Crypto HODL" />
+                            </datalist>
+                        </div>
+
                         {/* Optional Toggle */}
                         <div style={{ marginTop: '0.5rem' }}>
                             <button
@@ -306,22 +324,6 @@ export function ManualAssetModal({ onClose, initialSymbol = "" }: ManualAssetMod
                                         />
                                     </div>
                                 )}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', gridColumn: 'span 2' }}>
-                                    <label style={{ fontSize: '0.8rem', opacity: 0.7 }}>Portfolio Name</label>
-                                    <input
-                                        value={customGroup} onChange={e => setCustomGroup(e.target.value)}
-                                        placeholder="e.g. Retirement, Kids, Risky"
-                                        className="glass-input"
-                                        style={{ padding: '0.5rem', fontSize: '0.85rem' }}
-                                        list="portfolio-options"
-                                    />
-                                    <datalist id="portfolio-options">
-                                        <option value="Long Term" />
-                                        <option value="Short Term" />
-                                        <option value="Retirement" />
-                                        <option value="Crypto HODL" />
-                                    </datalist>
-                                </div>
                             </div>
                         )}
 
