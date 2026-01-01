@@ -1351,7 +1351,11 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
             const saved = localStorage.getItem('user_columns');
             if (saved) {
                 try {
-                    return JSON.parse(saved);
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed)) {
+                        // Filter out any columns that no longer exist in ALL_COLUMNS
+                        return parsed.filter((id: string) => ALL_COLUMNS.some(c => c.id === id));
+                    }
                 } catch (e) {
                     console.error("Failed to parse user columns", e);
                 }
