@@ -49,9 +49,9 @@ export function CurrencySelector() {
                     justifyContent: 'space-between'
                 }}
             >
-                <span className="desktop-only">{currency === 'ORG' ? '¤' : getCurrencySymbol(currency)}</span>
+                <span className="desktop-only">{currency === 'ORG' ? 'CCY' : getCurrencySymbol(currency)}</span>
                 <span className="mobile-only" style={{ fontSize: '0.9rem', fontWeight: 800 }}>
-                    {currency === 'ORG' ? '¤' : getCurrencySymbol(currency)}
+                    {currency === 'ORG' ? 'CCY' : getCurrencySymbol(currency)}
                 </span>
                 <ChevronDown size={14} style={{ opacity: 0.7, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
             </button>
@@ -74,7 +74,7 @@ export function CurrencySelector() {
                 }}>
                     {currencies.map(curr => {
                         let label = '';
-                        if (curr === 'ORG') label = 'Default (¤)';
+                        if (curr === 'ORG') label = 'Original';
                         else label = `${curr} (${getCurrencySymbol(curr)})`;
 
                         return (
