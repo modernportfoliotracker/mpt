@@ -29,7 +29,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { ASSET_COLORS } from "@/lib/constants";
 import { getLogoUrl } from "@/lib/logos";
 const TIME_PERIODS = ["1D", "1W", "1M", "YTD", "1Y", "ALL"];
-import { Bitcoin, Wallet, TrendingUp, PieChart, Gem, Coins, Layers, LayoutGrid, List, Save, X, Trash2, Settings, LayoutTemplate, Grid, Check, ChevronDown, ChevronRight, GripVertical, SlidersHorizontal } from "lucide-react";
+import { Bitcoin, Wallet, TrendingUp, PieChart, Gem, Coins, Layers, LayoutGrid, List, Save, X, Trash2, Settings, LayoutTemplate, Grid, Check, ChevronDown, ChevronRight, GripVertical, SlidersHorizontal, Briefcase } from "lucide-react";
 import { DetailedAssetCard } from "./DetailedAssetCard";
 import { getCompanyName } from "@/lib/companyNames";
 import { formatEUR, formatNumber } from "@/lib/formatters";
@@ -2044,7 +2044,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                         return (
                                                             <DraggableHeader key={colId} id={`col:${colId}`}>
                                                                 <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>
-                                                                    {colDef?.label.toUpperCase()}
+                                                                    {colId === 'PORTFOLIO_NAME' ? <Briefcase size={13} strokeWidth={2.5} /> : colDef?.label.toUpperCase()}
                                                                 </span>
                                                             </DraggableHeader>
                                                         );
