@@ -187,7 +187,7 @@ export function DetailedAssetCard({
                         <button onClick={handleSave} style={{ flex: 1, padding: '0.5rem', background: '#10b981', color: 'black', borderRadius: '0.4rem', fontWeight: 'bold' }}>Save</button>
                         <button onClick={() => setIsEditing(false)} style={{ flex: 1, padding: '0.5rem', background: 'rgba(255,255,255,0.1)', borderRadius: '0.4rem' }}>Cancel</button>
                     </div>
-                    <button onClick={() => { if (confirm('Delete?')) onDelete(asset.id) }} style={{ padding: '0.5rem', background: 'rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: '0.4rem', marginTop: '0.5rem' }}><Trash2 size={16} /></button>
+                    <button onClick={() => onDelete(asset.id)} style={{ padding: '0.5rem', background: 'rgba(239,68,68,0.2)', color: '#ef4444', borderRadius: '0.4rem', marginTop: '0.5rem' }}><Trash2 size={16} /></button>
                 </div>
             ) : (
                 <>

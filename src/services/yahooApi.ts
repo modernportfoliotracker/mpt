@@ -185,13 +185,13 @@ export async function getYahooQuote(symbol: string): Promise<YahooQuote | null> 
         console.error(`[YahooApi] Library quote error for ${symbol}:`, error);
     }
 
-    // Fallback Direct Quote (Chart API) - Does NOT save to DB to avoid bad data pollution if structure changes
+    // Fallback Direct Quote (Chart API)
     try {
         console.log(`[YahooApi] Trying Fallback Direct for ${symbol}`);
         const url = `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
         const response = await fetch(url, {
             headers: {
-                'User-Agent': 'Mozilla/5.0'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             }
         });
 
@@ -199,12 +199,35 @@ export async function getYahooQuote(symbol: string): Promise<YahooQuote | null> 
             const data = await response.json();
             const result = data.chart?.result?.[0];
             if (result?.meta) {
-                return {
+                const quote: YahooQuote = {
                     symbol: result.meta.symbol,
                     regularMarketPrice: result.meta.regularMarketPrice,
                     currency: result.meta.currency,
-                    regularMarketTime: new Date(result.meta.regularMarketTime * 1000)
+                    regularMarketTime: new Date(result.meta.regularMarketTime * 1000),
+                    regularMarketPreviousClose: result.meta.chartPreviousClose
                 };
+
+                // Save to DB (Persistent Cache - "Update Asset")
+                // This satisfies "update asset when new closing price comes"
+                await prisma.priceCache.upsert({
+                    where: { symbol: quote.symbol },
+                    create: {
+                        symbol: quote.symbol,
+                        price: quote.regularMarketPrice || 0,
+                        currency: quote.currency || 'USD',
+                        updatedAt: new Date()
+                    },
+                    update: {
+                        price: quote.regularMarketPrice || 0,
+                        currency: quote.currency || 'USD',
+                        updatedAt: new Date()
+                    }
+                }).catch(err => console.error('[YahooApi] DB Upsert (Fallback) Error:', err));
+
+                // Save to Memory
+                apiCache.set(cacheKey, quote, 0.5);
+
+                return quote;
             }
         }
     } catch (e) {

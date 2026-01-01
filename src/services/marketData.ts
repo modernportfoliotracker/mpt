@@ -98,6 +98,8 @@ export async function getMarketPrice(symbol: string, type: string, exchange?: st
         let searchSymbol = symbol;
         if (type === 'STOCK' && (symbol === 'TAVHL' || symbol === 'THYAO' || symbol === 'GARAN' || symbol === 'AKBNK')) {
             searchSymbol = `${symbol}.IS`;
+        } else if (type === 'STOCK' && symbol === 'ASML') {
+            searchSymbol = 'ASML.AS'; // Favor Euronext Amsterdam for ASML (Primary Listing)
         } else if (symbol === 'XAU') {
             searchSymbol = 'GC=F'; // Gold Futures (working ticker)
         } else if (symbol === 'GAUTRY') {

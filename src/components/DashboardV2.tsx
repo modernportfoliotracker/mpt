@@ -33,6 +33,7 @@ import { Bitcoin, Wallet, TrendingUp, PieChart, Gem, Coins, Layers, LayoutGrid, 
 import { DetailedAssetCard } from "./DetailedAssetCard";
 import { getCompanyName } from "@/lib/companyNames";
 import { formatEUR, formatNumber } from "@/lib/formatters";
+import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { RATES, getRate, getCurrencySymbol } from "@/lib/currency";
 
 interface DashboardProps {
@@ -101,7 +102,7 @@ import { AssetDisplay } from "@/lib/types";
 import { SortableAssetRow, SortableGroup, SortableAssetCard } from "./SortableWrappers";
 
 // Column Configurations
-type ColumnId = 'TYPE' | 'NAME' | 'TICKER' | 'EXCHANGE' | 'CURRENCY' | 'PRICE' | 'HOLDINGS' | 'VALUE' | 'PL' | 'EARNINGS';
+type ColumnId = 'TYPE' | 'NAME' | 'TICKER' | 'EXCHANGE' | 'CURRENCY' | 'PRICE' | 'HOLDINGS' | 'VALUE' | 'PL' | 'EARNINGS' | 'PORTFOLIO_NAME';
 
 interface ColumnConfig {
     id: ColumnId;
@@ -120,6 +121,7 @@ const ALL_COLUMNS: ColumnConfig[] = [
     { id: 'VALUE', label: 'Value', isDefault: true },
     { id: 'PL', label: 'P&L', isDefault: true },
     { id: 'EARNINGS', label: 'Next Earnings Date', isDefault: false },
+    { id: 'PORTFOLIO_NAME', label: 'Portfolio Name', isDefault: false },
 ];
 
 const COL_WIDTHS: Record<ColumnId, string> = {
@@ -132,7 +134,8 @@ const COL_WIDTHS: Record<ColumnId, string> = {
     HOLDINGS: '0.9fr',
     VALUE: '1.1fr',
     PL: '1.2fr',
-    EARNINGS: '0.9fr'
+    EARNINGS: '0.9fr',
+    PORTFOLIO_NAME: '0.9fr'
 };
 
 const DraggableHeader = ({ id, children, onToggle }: { id: string, children: React.ReactNode, onToggle?: () => void }) => {
@@ -275,11 +278,9 @@ function AssetTableRow({
         }
     };
 
-    const handleDelete = async (e: React.MouseEvent) => {
+    const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (confirm(`Are you sure you want to delete ${asset.symbol}?`)) {
-            onDelete(asset.id);
-        }
+        onDelete(asset.id);
     };
 
     const logoUrl = getLogoUrl(asset.symbol, asset.type, asset.exchange);
@@ -539,6 +540,28 @@ function AssetTableRow({
             case 'EARNINGS':
                 return (
                     <div className="col-earnings" style={{ fontSize: '0.75rem', opacity: 0.4, textAlign: 'right' }}>-</div>
+                );
+            case 'PORTFOLIO_NAME':
+                return (
+                    <div className="col-portfolio-name" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-start',
+                        padding: '0 0.5rem',
+                        height: '100%',
+                        borderRight: '1px dashed rgba(255,255,255,0.05)'
+                    }}>
+                        <span style={{
+                            fontSize: '0.75rem',
+                            color: 'var(--text-secondary)',
+                            background: 'var(--glass-shine)',
+                            padding: '0.1rem 0.4rem',
+                            borderRadius: '0.2rem',
+                            border: '1px solid var(--glass-border)'
+                        }}>
+                            {asset.customGroup || '-'}
+                        </span>
+                    </div>
                 );
             default:
                 return null;
@@ -822,11 +845,9 @@ function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlu
 
                             {/* Delete Button (Moved here) */}
                             <button
-                                onClick={async (e) => {
+                                onClick={(e) => {
                                     e.stopPropagation();
-                                    if (confirm(`Are you sure you want to delete ${asset.symbol}?`)) {
-                                        onDelete(asset.id);
-                                    }
+                                    onDelete(asset.id);
                                 }}
                                 onPointerDown={e => e.stopPropagation()}
                                 style={{
@@ -1321,6 +1342,9 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
     const [isGroupingSelectorHovered, setIsGroupingSelectorHovered] = useState(false);
     const [isViewSelectorHovered, setIsViewSelectorHovered] = useState(false);
 
+    // Delete Confirmation State
+    const [assetToDelete, setAssetToDelete] = useState<AssetDisplay | null>(null);
+
     // Column State
     const [activeColumns, setActiveColumns] = useState<ColumnId[]>(ALL_COLUMNS.filter(c => c.isDefault).map(c => c.id));
     const [isAdjustListOpen, setIsAdjustListOpen] = useState(false);
@@ -1463,9 +1487,15 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
         }
     }
 
-    const handleDelete = async (assetId: string) => {
-        // Confirmation is handled by the child component calling this
-        await deleteAsset(assetId);
+    const handleDelete = (assetId: string) => {
+        const asset = assets.find(a => a.id === assetId);
+        if (asset) setAssetToDelete(asset);
+    };
+
+    const confirmDelete = async () => {
+        if (!assetToDelete) return;
+        await deleteAsset(assetToDelete.id);
+        setAssetToDelete(null);
         router.refresh();
     };
 
@@ -2131,6 +2161,13 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                 </div>
 
             </div >
+
+            <DeleteConfirmationModal
+                isOpen={!!assetToDelete}
+                onClose={() => setAssetToDelete(null)}
+                onConfirm={confirmDelete}
+                assetSymbol={assetToDelete?.symbol || 'Asset'}
+            />
         </DndContext>
     );
 }
