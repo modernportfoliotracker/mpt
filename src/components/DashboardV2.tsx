@@ -27,7 +27,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { ASSET_COLORS } from "@/lib/constants";
 import { getLogoUrl } from "@/lib/logos";
 const TIME_PERIODS = ["1D", "1W", "1M", "YTD", "1Y", "ALL"];
-import { Bitcoin, Wallet, TrendingUp, PieChart, Gem, Coins, Layers, LayoutGrid, List, Save, X, Trash2, Settings, LayoutTemplate, Grid } from "lucide-react";
+import { Bitcoin, Wallet, TrendingUp, PieChart, Gem, Coins, Layers, LayoutGrid, List, Save, X, Trash2, Settings, LayoutTemplate, Grid, Check } from "lucide-react";
 import { DetailedAssetCard } from "./DetailedAssetCard";
 import { getCompanyName } from "@/lib/companyNames";
 import { formatEUR, formatNumber } from "@/lib/formatters";
@@ -141,12 +141,11 @@ function AssetTableRow({
     const totalProfitVal = displayTotalValue - displayCostBasis;
     const totalProfitPct = asset.plPercentage;
 
-    // Daily P&L (Simulated with a smaller mock factor if not available, or just use 1D factor)
-    const dailyProfitVal = totalProfitVal * 0.05;
-    const dailyProfitPct = totalProfitPct * 0.05;
+    // P&L based on Time Factor
+    const periodProfitVal = totalProfitVal * timeFactor;
+    const periodProfitPct = totalProfitPct * timeFactor;
 
-    const isTotalProfit = totalProfitVal >= 0;
-    const isDailyProfit = dailyProfitVal >= 0;
+    const isPeriodProfit = periodProfitVal >= 0;
 
     const fmt = (val: number, min = 2, max = 2) =>
         new Intl.NumberFormat('en-US', { minimumFractionDigits: min, maximumFractionDigits: max }).format(val || 0);
@@ -323,24 +322,14 @@ function AssetTableRow({
                 <span className="cost-basis-display" style={{ fontSize: '0.7rem', opacity: 0.5 }}>{currencySymbol}{fmt(displayCostBasis, 0, 0)}</span>
             </div>
 
-            {/* Daily P&L Column - Always Visible */}
-            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isDailyProfit ? '#10b981' : '#ef4444' }}>
-                    {isDailyProfit ? '+' : ''}{currencySymbol}{fmt(dailyProfitVal, 0, 0)}
-                </span>
-                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isDailyProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
-                    {isDailyProfit ? '▲' : '▼'}{fmt(dailyProfitPct)}%
-                </span>
-            </div>
-
-            {/* Total P&L Column - Hidden when Editing */}
+            {/* Consolidated P&L Column - Hidden when Editing */}
             {!isEditing && (
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isTotalProfit ? '#10b981' : '#ef4444' }}>
-                        {isTotalProfit ? '▲' : '▼'}{fmt(totalProfitPct)}%
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
+                        {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
                     </span>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isTotalProfit ? '#10b981' : '#ef4444', opacity: 0.6 }}>
-                        {isTotalProfit ? '+' : ''}{currencySymbol}{fmt(totalProfitVal, 0, 0)}
+                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
+                        {isPeriodProfit ? '+' : ''}{currencySymbol}{fmt(periodProfitVal, 0, 0)}
                     </span>
                 </div>
             )}
@@ -348,14 +337,14 @@ function AssetTableRow({
             {/* Actions Column - Expanded when Editing */}
             <div style={{
                 textAlign: 'right',
-                gridColumn: isEditing ? '6 / span 2' : 'auto',
+                gridColumn: isEditing ? '5 / span 2' : 'auto',
                 display: 'flex',
                 justifyContent: 'flex-end',
                 alignItems: 'center',
                 height: '100%'
             }}>
                 {isOwner && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '2px' }}>
                         {isEditing ? (
                             <>
                                 <button
@@ -363,31 +352,31 @@ function AssetTableRow({
                                     disabled={isSaving}
                                     style={{
                                         background: '#10b981', border: 'none',
-                                        color: '#000', cursor: 'pointer', padding: '0.4rem 0.8rem',
-                                        borderRadius: '0.3rem', fontSize: '0.8rem', fontWeight: 600,
-                                        display: 'flex', alignItems: 'center', gap: '4px'
+                                        color: '#000', cursor: 'pointer', padding: '0.4rem',
+                                        borderRadius: '0.3rem',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
                                     }}
                                     title="Save"
                                 >
-                                    {isSaving ? "..." : <><Save size={14} /> Save</>}
+                                    {isSaving ? "..." : <Check size={16} />}
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setIsEditing(false); }}
                                     style={{
                                         background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)',
-                                        color: 'var(--text-primary)', cursor: 'pointer', padding: '0.4rem 0.8rem',
-                                        borderRadius: '0.3rem', fontSize: '0.8rem', fontWeight: 600,
-                                        display: 'flex', alignItems: 'center', gap: '4px'
+                                        color: 'var(--text-primary)', cursor: 'pointer', padding: '0.4rem',
+                                        borderRadius: '0.3rem',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
                                     }}
                                     title="Discard"
                                 >
-                                    <X size={14} /> Discard
+                                    <X size={16} />
                                 </button>
                                 <button
                                     onClick={handleDelete}
                                     style={{
                                         background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                                        color: '#ef4444', cursor: 'pointer', padding: '0.4rem 0.6rem',
+                                        color: '#ef4444', cursor: 'pointer', padding: '0.4rem',
                                         borderRadius: '0.3rem',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                                     }}
@@ -1466,12 +1455,10 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                 <span className="mobile-only" style={{ fontSize: '0.6rem', fontWeight: 500, opacity: 0.4 }}>TOTAL COST</span>
                                             </div>
 
-                                            <div style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.5, letterSpacing: '0.05em', textAlign: 'right' }}>P&L (1D)</div>
-
-                                            {/* P&L % / Amount Header */}
+                                            {/* P&L % / Amount Header (Merged) */}
                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                                <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>P&L (%)</span>
-                                                <span className="mobile-only" style={{ fontSize: '0.6rem', fontWeight: 500, opacity: 0.4 }}>AMOUNT</span>
+                                                <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>{pLTitle}</span>
+                                                <span className="mobile-only" style={{ fontSize: '0.6rem', fontWeight: 500, opacity: 0.4 }}>PERCENT / AMOUNT</span>
                                             </div>
 
                                             <div></div>

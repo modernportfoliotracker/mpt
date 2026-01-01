@@ -221,7 +221,7 @@ body.light .glass-input:focus {
 /* Asset Table Responsive Grid */
 .asset-table-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 1.8fr) 1fr 1fr 1fr 1.2fr 1.2fr 50px;
+  grid-template-columns: minmax(220px, 1.8fr) 1fr 1fr 1.1fr 1.2fr 50px;
   padding: 0.6rem 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.02);
   align-items: center;
@@ -230,7 +230,7 @@ body.light .glass-input:focus {
 
 .asset-table-header {
   display: grid;
-  grid-template-columns: minmax(220px, 1.8fr) 1fr 1fr 1fr 1.2fr 1.2fr 50px;
+  grid-template-columns: minmax(220px, 1.8fr) 1fr 1fr 1.1fr 1.2fr 50px;
   padding: 0 1rem;
   margin-bottom: 0.5rem;
   opacity: 0.6;
@@ -301,8 +301,7 @@ body.light .glass-input:focus {
   /* Hide unused header columns to match data grid */
   /* 3: Holdings, 5: 1D P&L, 7: Actions */
   .asset-table-header>div:nth-child(3),
-  .asset-table-header>div:nth-child(5),
-  .asset-table-header>div:nth-child(7) {
+  .asset-table-header>div:nth-child(6) {
     display: none !important;
   }
 
@@ -449,7 +448,7 @@ body.light .glass-input:focus {
   /* -------------------------------------------------------------
      COLUMN 4: P&L AMOUNT (Top) & PERCENT (Bottom)
      ------------------------------------------------------------- */
-  .asset-table-grid>div:nth-child(6) {
+  .asset-table-grid>div:nth-child(5) {
     grid-column: 4;
     grid-row: 1;
     display: flex !important;
@@ -462,14 +461,14 @@ body.light .glass-input:focus {
   }
 
   /* P&L Amount */
-  .asset-table-grid>div:nth-child(6)>span:nth-of-type(1) {
+  .asset-table-grid>div:nth-child(5)>span:nth-of-type(1) {
     display: block !important;
     font-size: 0.7rem !important;
     font-weight: 700 !important;
   }
 
   /* P&L % */
-  .asset-table-grid>div:nth-child(6)>span:nth-of-type(2) {
+  .asset-table-grid>div:nth-child(5)>span:nth-of-type(2) {
     font-size: 0.65rem !important;
     opacity: 0.9;
     font-weight: 600 !important;
@@ -485,12 +484,10 @@ body.light .glass-input:focus {
   }
 
   /* Daily P&L (Col 5 in DOM) - Hidden */
-  .asset-table-grid>div:nth-child(5) {
-    display: none !important;
-  }
-
-  /* Actions (Col 7 in DOM) - Hidden */
-  .asset-table-grid>div:nth-child(7) {
+  /* Daily P&L - OLD RULE REMOVED, now consolidated P&L is child 5 which we show */
+  
+  /* Actions (Col 6 in DOM) - Hidden */
+  .asset-table-grid>div:nth-child(6) {
     display: none !important;
   }
 
