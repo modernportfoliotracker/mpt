@@ -1751,19 +1751,20 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                             <button
                                                 onClick={() => setIsAdjustListOpen(!isAdjustListOpen)}
                                                 style={{
-                                                    background: isAdjustListOpen ? '#6366f1' : 'transparent',
+                                                    background: '#6366f1',
                                                     border: 'none',
                                                     borderRadius: '1.5rem',
-                                                    color: isAdjustListOpen ? '#fff' : 'var(--text-secondary)',
+                                                    color: '#fff',
                                                     padding: '0.3rem 0.6rem',
                                                     fontSize: '0.75rem',
-                                                    fontWeight: isAdjustListOpen ? 700 : 600,
+                                                    fontWeight: 700,
                                                     cursor: 'pointer',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
                                                     gap: '0.4rem',
-                                                    transition: 'all 0.2s'
+                                                    transition: 'all 0.2s',
+                                                    boxShadow: '0 2px 10px rgba(99, 102, 241, 0.3)'
                                                 }}
                                                 title="Adjust List Columns"
                                             >
