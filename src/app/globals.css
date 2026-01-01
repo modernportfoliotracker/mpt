@@ -600,7 +600,7 @@ body.light .glass-input:focus {
 
 /* Default Currency Width */
 .currency-selector-btn {
-  width: 110px;
+  width: auto;
 }
 
 /* Dashboard Layout Default (Desktop) */

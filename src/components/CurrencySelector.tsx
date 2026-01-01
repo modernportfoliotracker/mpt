@@ -27,7 +27,7 @@ export function CurrencySelector() {
     const currencies = ["ORG", "EUR", "USD", "TRY"] as const;
 
     return (
-        <div ref={wrapperRef} style={{ position: 'relative' }}>
+        <div ref={wrapperRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="currency-selector-btn"
