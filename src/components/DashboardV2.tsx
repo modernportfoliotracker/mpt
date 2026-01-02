@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useRouter } from "next/navigation"; // Added router
 import { InlineAssetSearch } from "./InlineAssetSearch";
-import { deleteAsset, updateAsset } from "@/lib/actions"; // Added updateAsset
+import { deleteAsset, updateAsset, reorderAssets } from "@/lib/actions"; // Added updateAsset, reorderAssets
 import { UnifiedPortfolioSummary, AllocationCard } from "./PortfolioSidebarComponents";
 import {
     DndContext,
@@ -1448,7 +1448,14 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
         // Let's use the initial sort from `useEffect` for now if no `sortConfig` is available.
         // If `sortConfig` is meant to be a state, it should be declared.
         // For now, I'll use a placeholder sort that keeps the order from `filteredAssets`.
-        return [...filteredAssets].sort((a, b) => b.totalValueEUR - a.totalValueEUR); // Default sort by totalValueEUR descending
+        return [...filteredAssets].sort((a, b) => {
+            // Primary Sort: Rank (Ascending)
+            if ((a.rank ?? 0) !== (b.rank ?? 0)) {
+                return (a.rank ?? 0) - (b.rank ?? 0);
+            }
+            // Secondary Sort: Value (Descending)
+            return b.totalValueEUR - a.totalValueEUR;
+        });
     }, [filteredAssets]); // Add sortConfig to dependencies if it becomes a state
 
     // Grouping Logic
@@ -1506,11 +1513,20 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                 return;
             }
 
-            setItems((items) => {
-                const oldIndex = items.findIndex((item) => item.id === active.id);
-                const newIndex = items.findIndex((item) => item.id === over.id);
-                return arrayMove(items, oldIndex, newIndex);
-            });
+            const oldIndex = items.findIndex((item) => item.id === active.id);
+            const newIndex = items.findIndex((item) => item.id === over.id);
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const newItems = arrayMove(items, oldIndex, newIndex);
+                setItems(newItems);
+
+                // Update Server
+                const updates = newItems.map((item, index) => ({
+                    id: item.id,
+                    rank: index
+                }));
+                reorderAssets(updates);
+            }
         }
     }
 

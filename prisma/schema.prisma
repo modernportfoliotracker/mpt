@@ -46,6 +46,7 @@ model Asset {
   platform    String?  // Degiro, Is Bankasi, ING Bank, Binance, etc.
   customGroup String?  // User defined portfolio/group name
   isin        String?  // US0378331005, etc.
+  rank        Int      @default(0) // Custom sort order
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

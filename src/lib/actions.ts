@@ -228,4 +228,43 @@ export async function updateAsset(assetId: string, data: { quantity: number; buy
         console.error("Update asset error:", error);
         return { error: "Failed to update" };
     }
-}
+    // Reorder Assets Action
+    const ReorderSchema = z.array(z.object({
+        id: z.string(),
+        rank: z.number()
+    }));
+
+    export async function reorderAssets(items: { id: string; rank: number }[]) {
+        const session = await auth();
+        if (!session?.user?.email) return { error: "Not authenticated" };
+
+        const validated = ReorderSchema.safeParse(items);
+        if (!validated.success) return { error: "Invalid data" };
+
+        try {
+            const user = await prisma.user.findUnique({
+                where: { email: session.user.email },
+                include: { portfolio: true }
+            });
+
+            if (!user?.portfolio) return { error: "Unauthorized" };
+
+            // Verify all assets belong to user (Optional optimization: Just try update and depend on where clause? 
+            // Better to be safe, but doing findMany for all ids might be heavy if list is huge. 
+            // For reordering, we can just run updates where portfolioId matches.)
+
+            await prisma.$transaction(
+                validated.data.map((item) =>
+                    prisma.asset.update({
+                        where: { id: item.id, portfolioId: user.portfolio!.id }, // Security: Ensure belongs to user
+                        data: { rank: item.rank }
+                    })
+                )
+            );
+
+            return { success: true };
+        } catch (error) {
+            console.error("Reorder error:", error);
+            return { error: "Failed to reorder" };
+        }
+    }
