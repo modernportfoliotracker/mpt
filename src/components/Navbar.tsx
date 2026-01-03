@@ -42,7 +42,7 @@ export async function Navbar({ totalBalance, username, isOwner, showPortfolioBut
                             <span className="desktop-only">Modern Portfolio Tracker</span>
                             <span className="mobile-only">MPT</span>
                         </span>
-                        <span className="navbar-slogan desktop-only">Track your wealth in modern way!</span>
+                        <span className="navbar-slogan desktop-only">Track your wealth!</span>
                     </Link>
                 </div>
 

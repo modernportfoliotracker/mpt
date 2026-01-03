@@ -3,6 +3,7 @@
 import { useEffect, ReactNode, useState } from "react";
 import Dashboard from "@/components/DashboardV2";
 import { CurrencyProvider } from "@/context/CurrencyContext";
+import versionData from "@/version.json";
 
 interface ClientWrapperProps {
     username: string;
@@ -33,6 +34,16 @@ export function ClientWrapper({ username, isOwner, totalValueEUR, assets, navbar
                 assets={assets}
                 isBlurred={false}
             />
+
+            <div style={{
+                textAlign: 'center',
+                padding: '2rem 0 1rem 0',
+                fontSize: '0.65rem',
+                opacity: 0.3,
+                color: 'var(--text-secondary)'
+            }}>
+                v{versionData.version} - {versionData.buildDate} - {versionData.buildTime}
+            </div>
         </CurrencyProvider>
     );
 }
