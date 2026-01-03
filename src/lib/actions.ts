@@ -316,6 +316,6 @@ export async function reorderAssets(items: { id: string; rank: number }[]) {
     } catch (error) {
         debugLog(`Reorder error: ${error}`);
         console.error("Reorder error:", error);
-        return { error: "Failed to reorder" };
+        return { error: `Failed to reorder: ${error instanceof Error ? error.message : String(error)}` };
     }
 }
