@@ -1525,7 +1525,11 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                     id: item.id,
                     rank: index
                 }));
-                reorderAssets(updates);
+                reorderAssets(updates).then(() => {
+                    setTimeout(() => {
+                        router.refresh();
+                    }, 500); // 500ms delay to allow DB update
+                });
             }
         }
     }
