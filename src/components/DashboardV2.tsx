@@ -1442,6 +1442,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
     const [countryFilter, setCountryFilter] = useState<string | null>(null);
     const [sectorFilter, setSectorFilter] = useState<string | null>(null);
     const [platformFilter, setPlatformFilter] = useState<string | null>(null);
+    const [customGroupFilter, setCustomGroupFilter] = useState<string | null>(null);
 
     // Filter assets
     const filteredAssets = useMemo(() => {
@@ -1452,9 +1453,10 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
             if (countryFilter && asset.country !== countryFilter) return false;
             if (sectorFilter && asset.sector !== sectorFilter) return false;
             if (platformFilter && asset.platform !== platformFilter) return false;
+            if (customGroupFilter && (asset.customGroup || 'Main Portfolio') !== customGroupFilter) return false;
             return true;
         });
-    }, [items, typeFilter, exchangeFilter, currencyFilter, countryFilter, sectorFilter, platformFilter]);
+    }, [items, typeFilter, exchangeFilter, currencyFilter, countryFilter, sectorFilter, platformFilter, customGroupFilter]);
 
     // Memoize sorted assets
     const sortedAssets = useMemo(() => {
@@ -1475,17 +1477,29 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
         });
     }, [filteredAssets]); // Add sortConfig to dependencies if it becomes a state
 
+    // Grouping State: 'none' | 'customGroup' | 'type' | 'country' | 'sector' | 'platform'
+    const [groupingKey, setGroupingKey] = useState<string>('none');
+
+    // ... (rest of imports)
+
     // Grouping Logic
     const groupedAssets = useMemo(() => {
-        if (!isGroupingEnabled) return { 'All Assets': sortedAssets };
+        if (groupingKey === 'none') return { 'All Assets': sortedAssets };
 
         return sortedAssets.reduce((acc, asset) => {
-            const groupKey = asset.customGroup || asset.type || 'Other'; // Prioritize custom portfolio name
-            if (!acc[groupKey]) acc[groupKey] = [];
-            acc[groupKey].push(asset);
+            let key = 'Other';
+
+            if (groupingKey === 'customGroup') key = asset.customGroup || 'Main Portfolio';
+            else if (groupingKey === 'type') key = asset.type;
+            else if (groupingKey === 'country') key = asset.country || 'Unknown';
+            else if (groupingKey === 'sector') key = asset.sector || 'Unknown';
+            else if (groupingKey === 'platform') key = asset.platform || 'Unknown';
+
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(asset);
             return acc;
         }, {} as Record<string, AssetDisplay[]>);
-    }, [sortedAssets, isGroupingEnabled]);
+    }, [sortedAssets, groupingKey]);
 
 
     const groupTotals = useMemo(() => {
@@ -1574,7 +1588,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
 
 
 
-    const isDragEnabled = !activeFilterCategory && !typeFilter && !exchangeFilter && !currencyFilter && !countryFilter && !sectorFilter && !platformFilter;
+    const isDragEnabled = !activeFilterCategory && !typeFilter && !exchangeFilter && !currencyFilter && !countryFilter && !sectorFilter && !platformFilter && !customGroupFilter && groupingKey === 'none';
 
     // Calculate time-based profit
     const getTimeFactor = () => {
@@ -1597,9 +1611,11 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
     const countries = Array.from(new Set(assets.map(a => a.country).filter(Boolean))) as string[];
     const sectors = Array.from(new Set(assets.map(a => a.sector).filter(Boolean))) as string[];
     const platforms = Array.from(new Set(assets.map(a => a.platform).filter(Boolean))) as string[];
+    const customGroups = Array.from(new Set(assets.map(a => a.customGroup || 'Main Portfolio'))) as string[];
 
     // Filter categories
     const filterCategories = [
+        { id: 'customGroup', label: 'Portfolio', items: customGroups, active: customGroupFilter, setter: setCustomGroupFilter, icon: '📁' },
         { id: 'type', label: 'Type', items: types, active: typeFilter, setter: setTypeFilter, icon: '🏷️' },
         { id: 'exchange', label: 'Exchange', items: exchanges, active: exchangeFilter, setter: setExchangeFilter, icon: '📍' },
         { id: 'currency', label: 'Currency', items: currencies, active: currencyFilter, setter: setCurrencyFilter, icon: '💱' },
@@ -1871,16 +1887,20 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                         }}
                                     >
                                         {[
-                                            { value: false, label: 'Flat' },
-                                            { value: true, label: 'Groups' }
+                                            { value: 'none', label: 'Flat' },
+                                            { value: 'customGroup', label: 'Portfolio' },
+                                            { value: 'type', label: 'Type' },
+                                            { value: 'country', label: 'Country' }
                                         ].map(item => {
-                                            const isActive = isGroupingEnabled === item.value;
+                                            const isActive = groupingKey === item.value;
                                             const isVisible = isGroupingSelectorHovered || isActive;
+
+                                            if (!isVisible && !isActive) return null; // Logic handled by CSS generally but for pure JS render
 
                                             return (
                                                 <button
                                                     key={item.label}
-                                                    onClick={() => setIsGroupingEnabled(item.value)}
+                                                    onClick={() => setGroupingKey(item.value)}
                                                     style={{
                                                         background: isActive ? '#6366f1' : 'transparent',
                                                         border: 'none',
@@ -1896,7 +1916,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                         cursor: 'pointer',
                                                         whiteSpace: 'nowrap',
                                                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                        display: 'flex',
+                                                        display: isVisible ? 'flex' : 'none',
                                                         alignItems: 'center',
                                                         justifyContent: 'center'
                                                     }}
