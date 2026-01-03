@@ -19,8 +19,9 @@ export function InlineAssetSearch() {
     const [marketData, setMarketData] = useState<PriceResult | null>(null);
     const [quantity, setQuantity] = useState("");
     const [buyPrice, setBuyPrice] = useState("");
-    const [customGroup, setCustomGroup] = useState(""); // New state
-    const [showAdvanced, setShowAdvanced] = useState(false); // New state
+    const [customGroup, setCustomGroup] = useState("");
+    const [totalValue, setTotalValue] = useState(""); // For Funds
+    const [showAdvanced, setShowAdvanced] = useState(false);
     const [showManualModal, setShowManualModal] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
@@ -75,6 +76,16 @@ export function InlineAssetSearch() {
         }
     }, [selectedSymbol]);
 
+    // Auto-calculate quantity for FUNDS
+    useEffect(() => {
+        if (selectedSymbol?.type === 'FUND' && totalValue && marketData?.price) {
+            const val = parseFloat(totalValue);
+            if (!isNaN(val) && marketData.price > 0) {
+                setQuantity((val / marketData.price).toFixed(6));
+            }
+        }
+    }, [totalValue, marketData, selectedSymbol]);
+
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -91,6 +102,7 @@ export function InlineAssetSearch() {
         setSearchQuery(value);
         setSelectedSymbol(null);
         setShowQuantityForm(false);
+        setTotalValue("");
     };
 
     const handleSelectSymbol = (option: SymbolOption) => {
@@ -98,6 +110,7 @@ export function InlineAssetSearch() {
         setSearchQuery(option.symbol);
         setShowDropdown(false); // Explicitly close
         setShowQuantityForm(true);
+        setTotalValue("");
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -122,6 +135,7 @@ export function InlineAssetSearch() {
             setQuantity("");
             setBuyPrice("");
             setCustomGroup("");
+            setTotalValue("");
             setShowAdvanced(false);
             router.refresh();
         }
@@ -300,16 +314,33 @@ export function InlineAssetSearch() {
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
-                            <input
-                                type="number"
-                                step="any"
-                                required
-                                value={quantity}
-                                onChange={(e) => setQuantity(e.target.value)}
-                                placeholder={selectedSymbol.type === 'CASH' ? "Amount" : "Quantity"}
-                                className="glass-input"
-                                style={{ flex: 1, fontSize: '0.85rem', padding: '0.6rem' }}
-                            />
+                            {selectedSymbol.type === 'FUND' && marketData?.price ? (
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        value={totalValue}
+                                        onChange={(e) => setTotalValue(e.target.value)}
+                                        placeholder={`Total Value (${selectedSymbol.currency})`}
+                                        className="glass-input"
+                                        style={{ width: '100%', fontSize: '0.85rem', padding: '0.6rem' }}
+                                    />
+                                    {quantity && <div style={{ fontSize: '0.65rem', opacity: 0.6, paddingLeft: '0.5rem', marginTop: '2px' }}>
+                                        ≈ {quantity} units
+                                    </div>}
+                                </div>
+                            ) : (
+                                <input
+                                    type="number"
+                                    step="any"
+                                    required
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(e.target.value)}
+                                    placeholder={selectedSymbol.type === 'CASH' ? "Amount" : "Quantity"}
+                                    className="glass-input"
+                                    style={{ flex: 1, fontSize: '0.85rem', padding: '0.6rem' }}
+                                />
+                            )}
                             {selectedSymbol.type !== 'CASH' && (
                                 <div style={{ position: 'relative', flex: 1 }}>
                                     <input
