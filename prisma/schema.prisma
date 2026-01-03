@@ -45,6 +45,7 @@ model Asset {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   customGroup String?
+  rank        Int?      @default(0)
   portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
 }
 
