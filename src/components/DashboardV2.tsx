@@ -2134,7 +2134,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                             </div>
                                         )}
 
-                                        {isGroupingEnabled ? (
+                                        {groupingKey !== 'none' ? (
                                             <SortableContext items={orderedGroups.map(g => `group:${g}`)} strategy={verticalListSortingStrategy}>
                                                 {orderedGroups.map(type => (
                                                     <SortableGroup key={type} id={`group:${type}`}>
