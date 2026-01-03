@@ -4,6 +4,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { signIn, auth } from "@/auth";
 import { AuthError } from "next-auth";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getAssetName } from "@/services/marketData";
 
@@ -264,6 +265,9 @@ export async function updateAsset(assetId: string, data: { quantity: number; buy
                     })
                 )
             );
+
+            revalidatePath('/'); // Clear cache
+            revalidatePath('/[username]');
 
             return { success: true };
         } catch (error) {
