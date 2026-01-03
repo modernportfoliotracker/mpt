@@ -255,8 +255,11 @@ export async function updateAsset(assetId: string, data: { quantity: number; buy
 
             await prisma.$transaction(
                 validated.data.map((item) =>
-                    prisma.asset.update({
-                        where: { id: item.id, portfolioId: user.portfolio!.id }, // Security: Ensure belongs to user
+                    prisma.asset.updateMany({
+                        where: {
+                            id: item.id,
+                            portfolioId: user.portfolio!.id
+                        },
                         data: { rank: item.rank }
                     })
                 )
