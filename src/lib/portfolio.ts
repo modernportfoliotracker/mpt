@@ -97,8 +97,10 @@ export async function getPortfolioMetrics(assets: any[]): Promise<{ totalValueEU
 
     const totalPortfolioValueEUR = assetsWithValues.reduce((sum: number, asset) => sum + asset.totalValueEUR, 0);
 
+    const sorted = assetsWithValues.sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+    console.log("[Portfolio] Server returning assets with ranks:", sorted.map(a => `${a.symbol}:${a.rank}`));
     return {
         totalValueEUR: totalPortfolioValueEUR,
-        assetsWithValues: assetsWithValues.sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+        assetsWithValues: sorted
     };
 }

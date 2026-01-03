@@ -1,6 +1,13 @@
 "use server";
 
+
 import { z } from "zod";
+import fs from "fs";
+
+function logToFile(message: string) {
+    fs.appendFileSync("server_debug.log", new Date().toISOString() + " - " + message + "\n");
+}
+
 import bcrypt from "bcryptjs";
 import { signIn, auth } from "@/auth";
 import { AuthError } from "next-auth";
@@ -238,11 +245,21 @@ const ReorderSchema = z.array(z.object({
 }));
 
 export async function reorderAssets(items: { id: string; rank: number }[]) {
+    console.log("[Reorder] Action triggered. Items count:", items.length);
+
     const session = await auth();
-    if (!session?.user?.email) return { error: "Not authenticated" };
+    if (!session?.user?.email) {
+        console.error("[Reorder] Auth failed: No session or email");
+        return { error: "Not authenticated" };
+    }
+    console.log("[Reorder] Auth success for:", session.user.email);
 
     const validated = ReorderSchema.safeParse(items);
-    if (!validated.success) return { error: "Invalid data" };
+    if (!validated.success) {
+        console.error("[Reorder] Validation failed:", validated.error);
+        return { error: "Invalid data" };
+    }
+    console.log("[Reorder] Validation success");
 
     try {
         const user = await prisma.user.findUnique({
@@ -254,7 +271,10 @@ export async function reorderAssets(items: { id: string; rank: number }[]) {
             }
         });
 
-        if (!user?.portfolio) return { error: "Unauthorized" };
+        if (!user?.portfolio) {
+            console.error("[Reorder] User has no portfolio");
+            return { error: "Unauthorized" };
+        }
 
         // Verify all item IDs belong to the user's portfolio
         const userAssetIds = new Set(user.portfolio.assets.map(a => a.id));
@@ -266,12 +286,15 @@ export async function reorderAssets(items: { id: string; rank: number }[]) {
         }
 
         // Execute updates sequentially to ensure order and avoid potential race conditions
+        logToFile(`[Reorder] Processing ${validated.data.length} items for user ${user.username}`);
         for (const item of validated.data) {
+            logToFile(`[Reorder] Updating asset ${item.id} to rank ${item.rank}`);
             await prisma.asset.update({
                 where: { id: item.id },
                 data: { rank: item.rank }
             });
         }
+        logToFile("[Reorder] Update complete");
 
         // Revalidate specific username page to ensure fresh data
         revalidatePath(`/${user.username}`);
