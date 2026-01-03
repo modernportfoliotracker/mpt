@@ -265,15 +265,13 @@ export async function reorderAssets(items: { id: string; rank: number }[]) {
             return { error: "Unauthorized asset modification" };
         }
 
-        // Execute updates in transaction using direct ID updates (we verified ownership above)
-        await prisma.$transaction(
-            validated.data.map((item) =>
-                prisma.asset.update({
-                    where: { id: item.id },
-                    data: { rank: item.rank }
-                })
-            )
-        );
+        // Execute updates sequentially to ensure order and avoid potential race conditions
+        for (const item of validated.data) {
+            await prisma.asset.update({
+                where: { id: item.id },
+                data: { rank: item.rank }
+            });
+        }
 
         // Revalidate specific username page to ensure fresh data
         revalidatePath(`/${user.username}`);
