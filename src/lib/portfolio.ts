@@ -99,6 +99,6 @@ export async function getPortfolioMetrics(assets: any[]): Promise<{ totalValueEU
 
     return {
         totalValueEUR: totalPortfolioValueEUR,
-        assetsWithValues
+        assetsWithValues: assetsWithValues.sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
     };
 }
