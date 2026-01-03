@@ -1553,6 +1553,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                     console.log("[Reorder] Response:", res);
                     if (res && res.error) {
                         console.error("[Reorder] Error from server:", res.error);
+                        alert(`Order save failed: ${res.error}. Please refresh.`);
                     }
                 });
             }
