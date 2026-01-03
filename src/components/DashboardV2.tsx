@@ -1517,7 +1517,14 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
             const newIndex = items.findIndex((item) => item.id === over.id);
 
             if (oldIndex !== -1 && newIndex !== -1) {
-                const newItems = arrayMove(items, oldIndex, newIndex);
+                const movedItems = arrayMove(items, oldIndex, newIndex);
+
+                // OPTIMISTIC UPDATE: Update the rank property immediately so sortedAssets doesn't revert order
+                const newItems = movedItems.map((item, index) => ({
+                    ...item,
+                    rank: index
+                }));
+
                 setItems(newItems);
 
                 // Update Server
