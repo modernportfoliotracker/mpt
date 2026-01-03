@@ -2,22 +2,8 @@
 
 
 import { z } from "zod";
-import fs from "fs";
+// import fs from "fs"; -- Removed for Vercel compatibility
 
-const LOG_FILE = "/Users/ardaak/Downloads/Projects/PT/server_action.log";
-function debugLog(msg: string) {
-    try {
-        fs.appendFileSync(LOG_FILE, new Date().toISOString() + ": " + msg + "\n");
-    } catch (e) {
-        // ignore
-    }
-}
-
-
-
-function logToFile(message: string) {
-    fs.appendFileSync("server_debug.log", new Date().toISOString() + " - " + message + "\n");
-}
 
 import bcrypt from "bcryptjs";
 import { signIn, auth } from "@/auth";
@@ -256,7 +242,7 @@ const ReorderSchema = z.array(z.object({
 }));
 
 export async function reorderAssets(items: { id: string; rank: number }[]) {
-    debugLog(`Action triggered. Items: ${items.length}`);
+    // debugLog(`Action triggered. Items: ${items.length}`); // Removed for Vercel
     console.log("[Reorder] Action triggered. Items count:", items.length);
 
     const session = await auth();
@@ -298,15 +284,16 @@ export async function reorderAssets(items: { id: string; rank: number }[]) {
         }
 
         // Execute updates sequentially to ensure order and avoid potential race conditions
-        logToFile(`[Reorder] Processing ${validated.data.length} items for user ${user.username}`);
+        // Execute updates sequentially to ensure order and avoid potential race conditions
+        console.log(`[Reorder] Processing ${validated.data.length} items for user ${user.username}`);
         for (const item of validated.data) {
-            logToFile(`[Reorder] Updating asset ${item.id} to rank ${item.rank}`);
+            // console.log(`[Reorder] Updating asset ${item.id} to rank ${item.rank}`);
             await prisma.asset.update({
                 where: { id: item.id },
                 data: { rank: item.rank }
             });
         }
-        logToFile("[Reorder] Update complete");
+        console.log("[Reorder] Update complete");
 
         // Revalidate specific username page to ensure fresh data
         revalidatePath(`/${user.username}`);
@@ -314,8 +301,9 @@ export async function reorderAssets(items: { id: string; rank: number }[]) {
 
         return { success: true };
     } catch (error) {
-        debugLog(`Reorder error: ${error}`);
+        // debugLog(`Reorder error: ${error}`);
         console.error("Reorder error:", error);
+
         return { error: `Failed to reorder: ${error instanceof Error ? error.message : String(error)}` };
     }
 }
