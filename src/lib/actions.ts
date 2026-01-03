@@ -229,57 +229,59 @@ export async function updateAsset(assetId: string, data: { quantity: number; buy
         console.error("Update asset error:", error);
         return { error: "Failed to update" };
     }
-    // Reorder Assets Action
-    const ReorderSchema = z.array(z.object({
-        id: z.string(),
-        rank: z.number()
-    }));
+}
 
-    export async function reorderAssets(items: { id: string; rank: number }[]) {
-        const session = await auth();
-        if (!session?.user?.email) return { error: "Not authenticated" };
+// Reorder Assets Action
+const ReorderSchema = z.array(z.object({
+    id: z.string(),
+    rank: z.number()
+}));
 
-        const validated = ReorderSchema.safeParse(items);
-        if (!validated.success) return { error: "Invalid data" };
+export async function reorderAssets(items: { id: string; rank: number }[]) {
+    const session = await auth();
+    if (!session?.user?.email) return { error: "Not authenticated" };
 
-        try {
-            const user = await prisma.user.findUnique({
-                where: { email: session.user.email },
-                include: {
-                    portfolio: {
-                        include: { assets: { select: { id: true } } }
-                    }
+    const validated = ReorderSchema.safeParse(items);
+    if (!validated.success) return { error: "Invalid data" };
+
+    try {
+        const user = await prisma.user.findUnique({
+            where: { email: session.user.email },
+            include: {
+                portfolio: {
+                    include: { assets: { select: { id: true } } }
                 }
-            });
-
-            if (!user?.portfolio) return { error: "Unauthorized" };
-
-            // Verify all item IDs belong to the user's portfolio
-            const userAssetIds = new Set(user.portfolio.assets.map(a => a.id));
-            const invalidIds = validated.data.filter(item => !userAssetIds.has(item.id));
-
-            if (invalidIds.length > 0) {
-                console.error("Attempted to reorder unauthorized assets:", invalidIds);
-                return { error: "Unauthorized asset modification" };
             }
+        });
 
-            // Execute updates in transaction using direct ID updates (we verified ownership above)
-            await prisma.$transaction(
-                validated.data.map((item) =>
-                    prisma.asset.update({
-                        where: { id: item.id },
-                        data: { rank: item.rank }
-                    })
-                )
-            );
+        if (!user?.portfolio) return { error: "Unauthorized" };
 
-            // Revalidate specific username page to ensure fresh data
-            revalidatePath(`/${user.username}`);
-            revalidatePath('/');
+        // Verify all item IDs belong to the user's portfolio
+        const userAssetIds = new Set(user.portfolio.assets.map(a => a.id));
+        const invalidIds = validated.data.filter(item => !userAssetIds.has(item.id));
 
-            return { success: true };
-        } catch (error) {
-            console.error("Reorder error:", error);
-            return { error: "Failed to reorder" };
+        if (invalidIds.length > 0) {
+            console.error("Attempted to reorder unauthorized assets:", invalidIds);
+            return { error: "Unauthorized asset modification" };
         }
+
+        // Execute updates in transaction using direct ID updates (we verified ownership above)
+        await prisma.$transaction(
+            validated.data.map((item) =>
+                prisma.asset.update({
+                    where: { id: item.id },
+                    data: { rank: item.rank }
+                })
+            )
+        );
+
+        // Revalidate specific username page to ensure fresh data
+        revalidatePath(`/${user.username}`);
+        revalidatePath('/');
+
+        return { success: true };
+    } catch (error) {
+        console.error("Reorder error:", error);
+        return { error: "Failed to reorder" };
     }
+}
