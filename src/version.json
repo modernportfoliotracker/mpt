@@ -1,6 +1,6 @@
 {
-    "version": "v126",
+    "version": "v127",
     "buildDate": "04/01/2026",
-    "buildTime": "19:00",
-    "description": "Solidified grid separators (0.3 opacity) and ensured vertical line stability on hover."
+    "buildTime": "19:15",
+    "description": "Unified table architecture for true column-wide vertical separators. Eliminated all inter-row and inter-group gaps."
 }

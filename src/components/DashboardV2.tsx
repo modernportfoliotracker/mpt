@@ -1090,15 +1090,13 @@ const AssetGroupHeader = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '0.5rem 0.8rem', // More compact padding
-                background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(79, 70, 229, 0.05))', // Vivid Indigo Tint
-                border: '1px solid rgba(99, 102, 241, 0.2)', // Matching border
-                borderBottom: isExpanded ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
-                borderRadius: isExpanded ? '0.6rem 0.6rem 0 0' : '0.6rem', // Slightly smaller radius
-                marginBottom: isExpanded ? '0' : '0.5rem',
+                padding: '0.4rem 0.8rem',
+                background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.2), rgba(79, 70, 229, 0.1))',
+                borderRadius: '0',
+                borderBottom: '1px solid rgba(0,0,0,0.2)',
+                marginBottom: '0',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                userSelect: 'none',
-                boxShadow: isHovered ? '0 4px 15px rgba(99, 102, 241, 0.15)' : 'none'
+                userSelect: 'none'
             }}
         >
             {/* Left Side: Group Info */}
@@ -1225,7 +1223,7 @@ function AssetGroup({
     const fmt = (val: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
 
     return (
-        <div style={{ marginBottom: '1rem' }}>
+        <div style={{ marginBottom: '0' }}>
             <AssetGroupHeader
                 type={type}
                 count={assets?.length || 0}
@@ -2162,16 +2160,22 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                 ) : (
                                     <>
                                         {viewMode === "list" ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <div className="glass-panel" style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                padding: 0,
+                                                overflow: 'hidden',
+                                                borderRadius: '0.8rem'
+                                            }}>
                                                 {/* Table Header Always Show in List View */}
                                                 {true && (
-                                                    <div className="asset-table-header glass-panel" style={{
-                                                        borderBottom: 'none',
-                                                        borderRadius: '0.4rem 0.4rem 0 0',
+                                                    <div className="asset-table-header" style={{
+                                                        borderBottom: '2px solid rgba(0,0,0,0.15)',
                                                         alignItems: 'center',
                                                         display: 'grid',
                                                         gridTemplateColumns: activeColumns.map(c => COL_WIDTHS[c]).join(' '),
-                                                        gap: 0
+                                                        gap: 0,
+                                                        background: 'var(--glass-shine)'
                                                     }}>
                                                         <SortableContext items={activeColumns.map(c => `col:${c}`)} strategy={rectSortingStrategy}>
                                                             {activeColumns.map(colId => {

@@ -1,5 +1,10 @@
 # Changelog
 
+## v127 - 04/01/2026 19:15
+- UI: **Unified Table Structure**. Merged the header and asset list into a single, seamless container to eliminate all visual gaps.
+- UI: **True Column Separators**. Vertical lines are now perfectly continuous from the very top to the bottom of the table, regardless of rows or groups.
+- UI: Removed all inter-row and inter-group margins for a solid, premium grid block.
+
 ## v126 - 04/01/2026 19:00
 - UI: **'Black Line' Appearance**. Increased divider opacity to 0.3 for vertical and 0.18 for horizontal lines to create a premium, well-defined grid.
 - UI: **Absolute Divider Stability**. Optimized the hover shift mechanism so that vertical separators remain perfectly fixed to the rest of the table while row data slides.
