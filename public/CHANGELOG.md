@@ -1,5 +1,11 @@
 # Changelog
 
+## v120 - 04/01/2026 16:29
+- Feature: **Extreme-Density Mode**. The table now uses a zero-gutter layout and dynamic width scaling for 12+ columns.
+- UI: Enforced a strict 120px minimum/cap balance for the **Name** column to prevent pushing other columns off-screen.
+- UI: Re-optimized all column widths for better horizontal space utilization.
+- UI: Reduced ultra-mode font size to **0.58rem - 0.6rem** to ensure maximum visibility in crowded views.
+
 ## v119 - 04/01/2026 16:21
 - UI: Shortened column headers (e.g., "Price (Org)") and forced single-line display to prevent wrapping.
 - UI: Restored the hover-activated "Gear" settings button for assets.

@@ -127,18 +127,18 @@ const ALL_COLUMNS: ColumnConfig[] = [
 ];
 
 const COL_WIDTHS: Record<ColumnId, string> = {
-    TYPE: '0.6fr',
-    NAME: 'minmax(200px, 1.8fr)',
-    TICKER: '0.6fr',
-    EXCHANGE: '0.7fr',
-    CURRENCY: '0.5fr',
-    PRICE: '1fr',
-    PRICE_EUR: '1fr',
-    VALUE: '1.1fr',
-    VALUE_EUR: '1.1fr',
-    PL: '1.2fr',
-    EARNINGS: '0.9fr',
-    PORTFOLIO_NAME: '0.9fr'
+    TYPE: 'minmax(40px, 0.5fr)',
+    NAME: 'minmax(120px, 1.4fr)',
+    TICKER: 'minmax(45px, 0.45fr)',
+    EXCHANGE: 'minmax(55px, 0.6fr)',
+    CURRENCY: 'minmax(40px, 0.4fr)',
+    PRICE: 'minmax(65px, 0.8fr)',
+    PRICE_EUR: 'minmax(65px, 0.8fr)',
+    VALUE: 'minmax(75px, 0.9fr)',
+    VALUE_EUR: 'minmax(75px, 0.9fr)',
+    PL: 'minmax(70px, 1fr)',
+    EARNINGS: 'minmax(60px, 0.8fr)',
+    PORTFOLIO_NAME: 'minmax(60px, 0.8fr)'
 };
 
 const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: string, children: React.ReactNode, onToggle?: () => void, columnsCount?: number }) => {
@@ -153,7 +153,7 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
 
     // Dynamic density
     const isUltraHighDensity = columnsCount >= 10;
-    const isHighDensity = columnsCount > 8;
+    const isHighDensity = columnsCount >= 8;
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -178,19 +178,19 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
-                gap: isHighDensity ? '2px' : '4px',
+                gap: isUltraHighDensity ? '1px' : isHighDensity ? '2px' : '4px',
                 height: '100%',
-                paddingLeft: isHighDensity ? '0.1rem' : '0.4rem',
+                paddingLeft: isUltraHighDensity ? '0.1rem' : isHighDensity ? '0.2rem' : '0.4rem',
                 borderRight: '1px solid rgba(255,255,255,0.06)',
                 background: isDragging ? 'rgba(255,255,255,0.05)' : 'transparent',
                 overflow: 'hidden'
             }}>
-                {!isUltraHighDensity && <span style={{ opacity: 0.15, cursor: 'grab' }}><GripVertical size={10} /></span>}
+                {columnsCount < 11 && <span style={{ opacity: 0.15, cursor: 'grab' }}><GripVertical size={10} /></span>}
                 <div style={{
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    fontSize: isUltraHighDensity ? '0.6rem' : isHighDensity ? '0.65rem' : '0.7rem'
+                    fontSize: isUltraHighDensity ? '0.58rem' : isHighDensity ? '0.65rem' : '0.7rem'
                 }}>
                     {children}
                 </div>
@@ -309,9 +309,9 @@ function AssetTableRow({
     const isHighDensity = columnsCount >= 8;
     const isMediumDensity = columnsCount >= 5;
 
-    const fontSizeMain = isUltraHighDensity ? '0.62rem' : isHighDensity ? '0.68rem' : isMediumDensity ? '0.78rem' : '0.85rem';
-    const fontSizeSub = isUltraHighDensity ? '0.52rem' : isHighDensity ? '0.58rem' : isMediumDensity ? '0.65rem' : '0.7rem';
-    const cellPadding = isUltraHighDensity ? '0.1rem 0.2rem' : isHighDensity ? '0.2rem 0.35rem' : isMediumDensity ? '0.4rem 0.6rem' : '0.6rem 0.8rem';
+    const fontSizeMain = isUltraHighDensity ? '0.6rem' : isHighDensity ? '0.68rem' : isMediumDensity ? '0.78rem' : '0.85rem';
+    const fontSizeSub = isUltraHighDensity ? '0.5rem' : isHighDensity ? '0.58rem' : isMediumDensity ? '0.65rem' : '0.7rem';
+    const cellPadding = isUltraHighDensity ? '0.05rem 0.15rem' : isHighDensity ? '0.2rem 0.35rem' : isMediumDensity ? '0.4rem 0.6rem' : '0.6rem 0.8rem';
 
     const gridTemplate = columns.map(c => COL_WIDTHS[c]).join(' ');
 
@@ -322,7 +322,8 @@ function AssetTableRow({
         alignItems: 'center',
         overflow: 'hidden',
         minWidth: 0,
-        position: 'relative'
+        position: 'relative',
+        gap: isUltraHighDensity ? '1px' : '4px'
     };
 
     const renderCell = (colId: ColumnId) => {

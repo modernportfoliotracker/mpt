@@ -1,6 +1,6 @@
 {
-    "version": "v119",
+    "version": "v120",
     "buildDate": "04/01/2026",
-    "buildTime": "16:21",
-    "description": "Fixed header wrapping, restored hover-edit button, and implemented ultra-compact mode (10+ columns)."
+    "buildTime": "16:29",
+    "description": "Implemented extreme-density table mode with dynamic column widths, zero-gutter spacing, and strict width caps for text columns."
 }
