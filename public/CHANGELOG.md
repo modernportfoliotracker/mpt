@@ -1,5 +1,8 @@
 # Changelog
 
+## v133 - 04/01/2026 20:20
+- UI: **Default Column Reset**: Updated the "Adjust List" menu button to **"Default"**. Clicking it now restores the optimal column layout: Portfolio -> Name -> Price -> Value -> Price (€) -> Value (€) -> P&L.
+
 ## v132 - 04/01/2026 20:15
 - UI: **List View Only**. The dashboard has been streamlined to exclusively use the List view. Grid and Card view options have been removed.
 - UI: **Optimized Default Columns**. The default column layout has been updated to: Portfolio -> Name -> Price (Org) -> Value (Org) -> Price (€) -> Value (€) -> P&L.

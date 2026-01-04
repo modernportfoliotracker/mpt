@@ -2020,7 +2020,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                     <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.8rem', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                         <span>Table Columns</span>
                                                         <button
-                                                            onClick={() => setActiveColumns(['NAME', 'PRICE', 'VALUE', 'PL'])}
+                                                            onClick={() => setActiveColumns(['PORTFOLIO_NAME', 'NAME', 'PRICE', 'VALUE', 'PRICE_EUR', 'VALUE_EUR', 'PL'])}
                                                             style={{
                                                                 fontSize: '0.65rem',
                                                                 opacity: 0.7,
@@ -2033,7 +2033,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                 color: 'var(--text-primary)'
                                                             }}
                                                         >
-                                                            Reset
+                                                            Default
                                                         </button>
                                                     </div>
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
