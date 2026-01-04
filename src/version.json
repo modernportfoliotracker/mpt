@@ -1,6 +1,6 @@
 {
-    "version": "v125",
+    "version": "v126",
     "buildDate": "04/01/2026",
-    "buildTime": "18:40",
-    "description": "Fixed vertical separator continuity and increased grid line visibility (black line appearance)."
+    "buildTime": "19:00",
+    "description": "Solidified grid separators (0.3 opacity) and ensured vertical line stability on hover."
 }

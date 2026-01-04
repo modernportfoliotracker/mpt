@@ -1,5 +1,10 @@
 # Changelog
 
+## v126 - 04/01/2026 19:00
+- UI: **'Black Line' Appearance**. Increased divider opacity to 0.3 for vertical and 0.18 for horizontal lines to create a premium, well-defined grid.
+- UI: **Absolute Divider Stability**. Optimized the hover shift mechanism so that vertical separators remain perfectly fixed to the rest of the table while row data slides.
+- UI: **Nested Shifting Container**. Content transformation is now strictly isolated to ensure zero layout jump on the grid borders.
+
 ## v125 - 04/01/2026 18:40
 - UI: **True Continuous Separators**. Moved divider borders into cells and increased opacity to 0.25 to ensure unbreakable vertical lines.
 - UI: **Fixed Grid Lines**. Grid lines now remain fixed during hover, while only the content performs the 35px shift.

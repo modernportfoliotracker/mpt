@@ -182,8 +182,8 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
                 gap: isUltraHighDensity ? '1px' : '3px',
                 height: '100%',
                 paddingLeft: isUltraHighDensity ? '0.05rem' : '0.2rem',
-                borderRight: '1px solid rgba(0,0,0,0.25)',
-                borderBottom: '1px solid rgba(0,0,0,0.15)',
+                borderRight: '1px solid rgba(0,0,0,0.3)',
+                borderBottom: '1px solid rgba(0,0,0,0.18)',
                 background: isDragging ? 'rgba(0,0,0,0.05)' : 'transparent',
                 overflow: 'hidden'
             }}>
@@ -321,8 +321,8 @@ function AssetTableRow({
 
     const commonCellStyles: React.CSSProperties = {
         padding: cellPadding,
-        borderRight: '1px solid rgba(0,0,0,0.25)',
-        borderBottom: '1px solid rgba(0,0,0,0.15)',
+        borderRight: '1px solid rgba(0,0,0,0.3)',
+        borderBottom: '1px solid rgba(0,0,0,0.18)',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
@@ -582,6 +582,7 @@ function AssetTableRow({
                         ...commonCellStyles,
                         justifyContent: isNumeric ? 'flex-end' : 'flex-start',
                     }}>
+                        {/* Shifting Content Wrapper */}
                         <div style={{
                             width: '100%',
                             height: '100%',
@@ -589,7 +590,8 @@ function AssetTableRow({
                             alignItems: 'center',
                             justifyContent: isNumeric ? 'flex-end' : 'flex-start',
                             transform: isHovered && isOwner && !isEditing ? 'translateX(-35px)' : 'none',
-                            transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                            transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            flexShrink: 0
                         }}>
                             {renderCell(colId)}
                         </div>
