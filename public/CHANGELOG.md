@@ -1,5 +1,11 @@
 # Changelog
 
+## v118 - 04/01/2026 15:35
+- Feature: **Dynamic List Density**. The table now automatically adjusts font sizes, padding, and layout based on the number of selected columns.
+- UI: Added subtle vertical separators between columns for better visual structure.
+- UI: Improved alignment - non-numeric text is now consistently left-aligned, while financial data remains right-aligned.
+- UI: Enhanced text overflow handling (ellipsis) to prevent column overlap in compact views.
+
 ## v117 - 04/01/2026 15:02
 - UI: Renamed **Price** to **Price (Org. CCY)** and **Value** to **Value (Org. CCY)** in the asset list.
 - Versioning: Switched to a simplified versioning format (e.g., v117).

@@ -1,6 +1,6 @@
 {
-    "version": "v117",
+    "version": "v118",
     "buildDate": "04/01/2026",
-    "buildTime": "15:02",
-    "description": "Updated versioning format and renamed columns to Price (Org. CCY) and Value (Org. CCY)."
+    "buildTime": "15:35",
+    "description": "Implemented high-density list view with dynamic font sizing, vertical separators, and improved text alignment for multi-column layouts."
 }

@@ -141,7 +141,7 @@ const COL_WIDTHS: Record<ColumnId, string> = {
     PORTFOLIO_NAME: '0.9fr'
 };
 
-const DraggableHeader = ({ id, children, onToggle }: { id: string, children: React.ReactNode, onToggle?: () => void }) => {
+const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: string, children: React.ReactNode, onToggle?: () => void, columnsCount?: number }) => {
     const {
         attributes,
         listeners,
@@ -150,6 +150,10 @@ const DraggableHeader = ({ id, children, onToggle }: { id: string, children: Rea
         transition,
         isDragging
     } = useSortable({ id });
+
+    // Dynamic density
+    const isHighDensity = columnsCount > 8;
+    const isMediumDensity = columnsCount > 5;
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -173,13 +177,14 @@ const DraggableHeader = ({ id, children, onToggle }: { id: string, children: Rea
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'flex-start', // Use flex-start for left alignment
-                gap: '8px',
+                justifyContent: 'flex-start',
+                gap: isHighDensity ? '4px' : '8px',
                 height: '100%',
-                paddingLeft: '0.5rem',
-                borderRight: '1px dashed rgba(255,255,255,0.05)' // Subtle separator
+                paddingLeft: isHighDensity ? '0.2rem' : '0.5rem',
+                borderRight: '1px solid rgba(255,255,255,0.04)', // Vertical separator
+                background: isDragging ? 'rgba(255,255,255,0.05)' : 'transparent'
             }}>
-                <span style={{ opacity: 0.3, cursor: 'grab' }}><GripVertical size={12} /></span>
+                <span style={{ opacity: 0.2, cursor: 'grab', display: isHighDensity ? 'none' : 'block' }}><GripVertical size={10} /></span>
                 {children}
             </div>
         </div>
@@ -289,21 +294,43 @@ function AssetTableRow({
     const logoUrl = getLogoUrl(asset.symbol, asset.type, asset.exchange);
     const companyName = getCompanyName(asset.symbol, asset.type, asset.name);
 
+    // Dynamic Layout Logic
+    const columnsCount = columns.length;
+    const isHighDensity = columnsCount > 8;
+    const isMediumDensity = columnsCount > 5;
+
+    const fontSizeMain = isHighDensity ? '0.7rem' : isMediumDensity ? '0.78rem' : '0.85rem';
+    const fontSizeSub = isHighDensity ? '0.6rem' : isMediumDensity ? '0.65rem' : '0.7rem';
+    const cellPadding = isHighDensity ? '0.2rem 0.4rem' : isMediumDensity ? '0.4rem 0.6rem' : '0.6rem 0.8rem';
+
     const gridTemplate = columns.map(c => COL_WIDTHS[c]).join(' ');
 
+    const commonCellStyles: React.CSSProperties = {
+        padding: cellPadding,
+        borderRight: '1px solid rgba(255,255,255,0.03)',
+        display: 'flex',
+        alignItems: 'center',
+        overflow: 'hidden',
+        minWidth: 0
+    };
+
     const renderCell = (colId: ColumnId) => {
+        const isNumeric = ['PRICE', 'PRICE_EUR', 'VALUE', 'VALUE_EUR', 'PL', 'EARNINGS'].includes(colId);
+
+        let cellContent = null;
         switch (colId) {
             case 'TYPE':
-                return (
-                    <div className="col-type" style={{ fontSize: '0.7rem', opacity: 0.6, fontWeight: 500 }}>
+                cellContent = (
+                    <div className="col-type" style={{ fontSize: fontSizeSub, opacity: 0.6, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {asset.type}
                     </div>
                 );
+                break;
             case 'NAME':
-                return (
-                    <div className="col-name" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
-                        <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size="2rem" />
-                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: isEditing ? '4px' : '0' }}>
+                cellContent = (
+                    <div className="col-name" style={{ display: 'flex', alignItems: 'center', gap: isHighDensity ? '0.4rem' : '0.8rem', minWidth: 0, width: '100%' }}>
+                        <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size={isHighDensity ? "1.4rem" : "2rem"} />
+                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: isEditing ? '4px' : '0', flex: 1 }}>
                             {isEditing ? (
                                 <>
                                     <input
@@ -311,18 +338,18 @@ function AssetTableRow({
                                         value={editName}
                                         onChange={(e) => setEditName(e.target.value)}
                                         onClick={(e) => e.stopPropagation()}
-                                        placeholder="Asset Name"
+                                        placeholder="Name"
                                         style={{
                                             background: 'var(--glass-shine)',
                                             border: '1px solid var(--glass-border)',
                                             borderRadius: '3px',
                                             color: 'var(--text-primary)',
-                                            fontSize: '0.8rem',
-                                            padding: '2px 4px',
+                                            fontSize: '0.7rem',
+                                            padding: '1px 2px',
                                             width: '100%',
                                         }}
                                     />
-                                    <div style={{ display: 'flex', gap: '5px' }}>
+                                    <div style={{ display: 'flex', gap: '3px' }}>
                                         <input
                                             type="text"
                                             value={editSymbol}
@@ -334,282 +361,195 @@ function AssetTableRow({
                                                 border: '1px solid var(--glass-border)',
                                                 borderRadius: '3px',
                                                 color: 'var(--text-primary)',
-                                                fontSize: '0.7rem',
-                                                padding: '2px 4px',
-                                                width: '60px',
+                                                fontSize: '0.65rem',
+                                                padding: '1px 2px',
+                                                width: '100%',
                                                 textTransform: 'uppercase'
                                             }}
                                         />
-                                        <input
-                                            type="number"
-                                            value={editQty}
-                                            onChange={(e) => setEditQty(Number(e.target.value))}
-                                            onClick={(e) => e.stopPropagation()}
-                                            placeholder="Qty"
-                                            style={{
-                                                background: 'var(--glass-shine)',
-                                                border: '1px solid var(--glass-border)',
-                                                borderRadius: '3px',
-                                                color: 'var(--text-primary)',
-                                                fontSize: '0.7rem',
-                                                padding: '2px 4px',
-                                                width: '70px',
-                                            }}
-                                        />
                                     </div>
-                                    <input
-                                        type="text"
-                                        value={editCustomGroup}
-                                        onChange={(e) => setEditCustomGroup(e.target.value)}
-                                        onClick={(e) => e.stopPropagation()}
-                                        placeholder="Portfolio Name"
-                                        style={{
-                                            background: 'var(--glass-shine)',
-                                            border: '1px solid var(--glass-border)',
-                                            borderRadius: '3px',
-                                            color: 'var(--text-primary)',
-                                            fontSize: '0.7rem',
-                                            padding: '2px 4px',
-                                            width: '100%',
-                                        }}
-                                    />
                                 </>
                             ) : (
                                 <>
                                     <span style={{
-                                        fontSize: '0.85rem',
+                                        fontSize: fontSizeMain,
                                         fontWeight: 600,
                                         color: 'var(--text-primary)',
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
+                                        textOverflow: 'ellipsis',
+                                        lineHeight: 1.1
                                     }}>
                                         {companyName}
                                     </span>
-                                    {/* Subtitle logic preserved */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span style={{ fontSize: '0.7rem', opacity: 0.4, fontWeight: 500 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
+                                        <span style={{ fontSize: fontSizeSub, opacity: 0.4, fontWeight: 500 }}>
                                             {asset.symbol}
                                         </span>
-                                        <span style={{
-                                            fontSize: '0.7rem',
-                                            opacity: 0.8,
-                                            fontWeight: 600,
-                                            color: 'var(--accent)',
-                                            background: 'rgba(99, 102, 241, 0.1)',
-                                            padding: '0 4px',
-                                            borderRadius: '3px'
-                                        }}>
-                                            x{asset.quantity >= 1000
-                                                ? (asset.quantity / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
-                                                : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 2 })}
-                                        </span>
+                                        {!isHighDensity && (
+                                            <span style={{
+                                                fontSize: '0.65rem',
+                                                opacity: 0.8,
+                                                fontWeight: 600,
+                                                color: 'var(--accent)',
+                                                background: 'rgba(99, 102, 241, 0.1)',
+                                                padding: '0 4px',
+                                                borderRadius: '3px'
+                                            }}>
+                                                x{asset.quantity >= 1000
+                                                    ? (asset.quantity / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
+                                                    : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 1 })}
+                                            </span>
+                                        )}
                                     </div>
                                 </>
                             )}
                         </div>
                     </div>
                 );
+                break;
             case 'TICKER':
-                return (
-                    <div className="col-ticker" style={{ fontSize: '0.85rem', fontWeight: 600 }}>{asset.symbol}</div>
-                );
+                cellContent = <div style={{ fontSize: fontSizeMain, fontWeight: 600 }}>{asset.symbol}</div>;
+                break;
             case 'EXCHANGE':
-                return (
-                    <div className="col-exchange" style={{ fontSize: '0.75rem', opacity: 0.6 }}>{asset.exchange || '-'}</div>
-                );
+                cellContent = <div style={{ fontSize: fontSizeSub, opacity: 0.6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.exchange || '-'}</div>;
+                break;
             case 'CURRENCY':
-                return (
-                    <div className="col-currency" style={{ fontSize: '0.75rem', opacity: 0.6 }}>{asset.currency || '-'}</div>
-                );
+                cellContent = <div style={{ fontSize: fontSizeSub, opacity: 0.6 }}>{asset.currency || '-'}</div>;
+                break;
             case 'PRICE':
-                return (
-                    <div className="col-price" style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>{currencySymbol}{fmt(displayPrice)}</span>
-                        {isEditing ? (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '2px' }}>
-                                <input
-                                    type="number"
-                                    value={editCost}
-                                    onChange={(e) => setEditCost(Number(e.target.value))}
-                                    onClick={(e) => e.stopPropagation()}
-                                    style={{
-                                        width: '60px',
-                                        background: 'var(--glass-shine)',
-                                        border: '1px solid var(--glass-border)',
-                                        borderRadius: '3px',
-                                        color: 'var(--text-primary)',
-                                        fontSize: '0.7rem',
-                                        padding: '2px 4px',
-                                        textAlign: 'right'
-                                    }}
-                                />
-                            </div>
-                        ) : (
-                            <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>{currencySymbol}{fmt(displayAvgPrice)}</span>
+                cellContent = (
+                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', width: '100%' }}>
+                        <span style={{ fontSize: fontSizeMain, fontWeight: 500, opacity: 0.9 }}>{currencySymbol}{fmt(displayPrice)}</span>
+                        {!isHighDensity && !isEditing && <span style={{ fontSize: '0.65rem', opacity: 0.3 }}>{currencySymbol}{fmt(displayAvgPrice)}</span>}
+                        {isEditing && (
+                            <input
+                                type="number"
+                                value={editCost}
+                                onChange={(e) => setEditCost(Number(e.target.value))}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{
+                                    width: '100%',
+                                    background: 'var(--glass-shine)',
+                                    border: '1px solid var(--glass-border)',
+                                    borderRadius: '3px',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '0.65rem',
+                                    padding: '1px 2px',
+                                    textAlign: 'right'
+                                }}
+                            />
                         )}
                     </div>
                 );
+                break;
             case 'PRICE_EUR':
-                return (
-                    <div className="col-price-eur" style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 500, opacity: 0.9 }}>€{fmt(asset.currentPrice * getRate(asset.currency, 'EUR'))}</span>
-                        <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>€{fmt(asset.buyPrice * getRate(asset.currency, 'EUR'))}</span>
+                cellContent = (
+                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', width: '100%' }}>
+                        <span style={{ fontSize: fontSizeMain, fontWeight: 500, opacity: 0.9 }}>€{fmt(asset.currentPrice * getRate(asset.currency, 'EUR'))}</span>
+                        {!isHighDensity && <span style={{ fontSize: '0.65rem', opacity: 0.3 }}>€{fmt(asset.buyPrice * getRate(asset.currency, 'EUR'))}</span>}
                     </div>
                 );
-
+                break;
             case 'VALUE':
-                return (
-                    <div className="col-value" style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(displayTotalValue, 0, 0)}</span>
-                        <span className="cost-basis-display" style={{ fontSize: '0.7rem', opacity: 0.5 }}>{currencySymbol}{fmt(displayCostBasis, 0, 0)}</span>
+                cellContent = (
+                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', width: '100%' }}>
+                        <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(displayTotalValue, 0, 0)}</span>
+                        {!isHighDensity && <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{currencySymbol}{fmt(displayCostBasis, 0, 0)}</span>}
                     </div>
                 );
+                break;
             case 'VALUE_EUR':
                 {
                     const costEUR = (asset.buyPrice * asset.quantity) * getRate(asset.currency, 'EUR');
-                    return (
-                        <div className="col-value-eur" style={{ textAlign: 'right', display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>€{fmt(asset.totalValueEUR, 0, 0)}</span>
-                            <span className="cost-basis-display" style={{ fontSize: '0.7rem', opacity: 0.5 }}>€{fmt(costEUR, 0, 0)}</span>
+                    cellContent = (
+                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', width: '100%' }}>
+                            <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: 'var(--text-primary)' }}>€{fmt(asset.totalValueEUR, 0, 0)}</span>
+                            {!isHighDensity && <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>€{fmt(costEUR, 0, 0)}</span>}
                         </div>
                     );
                 }
+                break;
             case 'PL':
-                return (
-                    <div className="col-pl" style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
+                cellContent = (
+                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', width: '100%' }}>
                         {isEditing ? (
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '2px' }}>
-                                <button
-                                    onClick={handleSave}
-                                    disabled={isSaving}
-                                    style={{
-                                        background: '#10b981', border: 'none',
-                                        color: '#000', cursor: 'pointer', padding: '0.4rem',
-                                        borderRadius: '0.3rem',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}
-                                    title="Save"
-                                >
-                                    {isSaving ? "..." : <Check size={16} />}
+                                <button onClick={handleSave} disabled={isSaving} style={{ background: '#10b981', border: 'none', color: '#000', cursor: 'pointer', padding: '2px', borderRadius: '3px' }}>
+                                    {isSaving ? "..." : <Check size={12} />}
                                 </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setIsEditing(false); }}
-                                    style={{
-                                        background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)',
-                                        color: 'var(--text-primary)', cursor: 'pointer', padding: '0.4rem',
-                                        borderRadius: '0.3rem',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}
-                                    title="Discard"
-                                >
-                                    <X size={16} />
+                                <button onClick={(e) => { e.stopPropagation(); setIsEditing(false); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', cursor: 'pointer', padding: '2px', borderRadius: '3px' }}>
+                                    <X size={12} />
                                 </button>
-                                <button
-                                    onClick={handleDelete}
-                                    style={{
-                                        background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                                        color: '#ef4444', cursor: 'pointer', padding: '0.4rem',
-                                        borderRadius: '0.3rem',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}
-                                    title="Delete Asset"
-                                >
-                                    <Trash2 size={16} />
+                                <button onClick={handleDelete} style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', cursor: 'pointer', padding: '2px', borderRadius: '3px' }}>
+                                    <Trash2 size={12} />
                                 </button>
                             </div>
                         ) : (
-                            <div className="pl-action-container">
-                                <div className="pl-column-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
-                                        {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
-                                    </span>
-                                    <span style={{ fontSize: '0.7rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
+                                    {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
+                                </span>
+                                {!isHighDensity && (
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
                                         {isPeriodProfit ? '+' : ''}{currencySymbol}{fmt(periodProfitVal, 0, 0)}
                                     </span>
-                                </div>
-                                {isOwner && (
-                                    <div className="action-buttons-container">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setIsEditing(true);
-                                                setEditName(asset.name || "");
-                                                setEditSymbol(asset.symbol);
-                                                setEditCustomGroup(asset.customGroup || ""); // New
-                                                setEditQty(asset.quantity);
-                                                setEditCost(asset.buyPrice);
-                                            }}
-                                            style={{
-                                                background: 'var(--glass-shine)',
-                                                border: '1px solid var(--glass-border)',
-                                                color: 'var(--text-primary)',
-                                                cursor: 'pointer', padding: '0.4rem',
-                                                borderRadius: '0.3rem',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
-                                            }}
-                                            title="Edit Asset"
-                                        >
-                                            <Settings size={14} />
-                                        </button>
-                                    </div>
                                 )}
                             </div>
                         )}
                     </div>
                 );
+                break;
             case 'EARNINGS':
-                return (
-                    <div className="col-earnings" style={{ fontSize: '0.75rem', opacity: 0.4, textAlign: 'right' }}>-</div>
-                );
+                cellContent = <div style={{ fontSize: fontSizeSub, opacity: 0.4, textAlign: 'right', width: '100%' }}>-</div>;
+                break;
             case 'PORTFOLIO_NAME':
-                return (
-                    <div className="col-portfolio-name" style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'flex-start',
-                        padding: '0 0.5rem',
-                        height: '100%',
-                        borderRight: '1px dashed rgba(255,255,255,0.05)'
+                cellContent = (
+                    <span style={{
+                        fontSize: fontSizeSub,
+                        color: 'var(--text-secondary)',
+                        background: 'var(--glass-shine)',
+                        padding: '1px 4px',
+                        borderRadius: '2px',
+                        border: '1px solid var(--glass-border)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                     }}>
-                        <span style={{
-                            fontSize: '0.75rem',
-                            color: 'var(--text-secondary)',
-                            background: 'var(--glass-shine)',
-                            padding: '0.1rem 0.4rem',
-                            borderRadius: '0.2rem',
-                            border: '1px solid var(--glass-border)'
-                        }}>
-                            {asset.customGroup || '-'}
-                        </span>
-                    </div>
+                        {asset.customGroup || '-'}
+                    </span>
                 );
-            default:
-                return null;
+                break;
         }
+
+        return (
+            <div key={colId} style={{
+                ...commonCellStyles,
+                justifyContent: isNumeric ? 'flex-end' : 'flex-start',
+            }}>
+                {cellContent}
+            </div>
+        );
     }
 
     return (
         <div
-            className="asset-table-grid table-row-hover"
+            className="asset-table-grid row-container"
             style={{
                 display: 'grid',
                 gridTemplateColumns: gridTemplate,
+                minHeight: isHighDensity ? '2.5rem' : '3.5rem',
+                borderBottom: '1px solid rgba(255,255,255,0.04)',
                 background: justUpdated
                     ? 'rgba(16, 185, 129, 0.1)'
                     : isEditing
                         ? 'rgba(245, 158, 11, 0.05)'
                         : (rowIndex !== undefined && rowIndex % 2 === 1)
-                            ? 'rgba(255,255,255,0.02)'
+                            ? 'rgba(255,255,255,0.01)'
                             : 'transparent'
             }}
         >
-            {columns.map(colId => (
-                <React.Fragment key={colId}>
-                    {renderCell(colId)}
-                </React.Fragment>
-            ))}
+            {columns.map(colId => renderCell(colId))}
         </div>
     );
 }
@@ -2150,9 +2090,9 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                             {activeColumns.map(colId => {
                                                                 const colDef = ALL_COLUMNS.find(c => c.id === colId);
                                                                 return (
-                                                                    <DraggableHeader key={colId} id={`col:${colId}`}>
-                                                                        <span style={{ fontSize: '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>
-                                                                            {colId === 'PORTFOLIO_NAME' ? <Briefcase size={13} strokeWidth={2.5} /> : colDef?.label.toUpperCase()}
+                                                                    <DraggableHeader key={colId} id={`col:${colId}`} columnsCount={activeColumns.length}>
+                                                                        <span style={{ fontSize: activeColumns.length > 8 ? '0.65rem' : '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>
+                                                                            {colId === 'PORTFOLIO_NAME' ? <Briefcase size={activeColumns.length > 8 ? 11 : 13} strokeWidth={2.5} /> : colDef?.label.toUpperCase()}
                                                                         </span>
                                                                     </DraggableHeader>
                                                                 );
