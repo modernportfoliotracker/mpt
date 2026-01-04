@@ -1,6 +1,6 @@
 {
-    "version": "v129",
+    "version": "v131",
     "buildDate": "04/01/2026",
-    "buildTime": "19:40",
-    "description": "True Column Separation (abc/def style). Eliminated all horizontal gaps and borders between header, groups, and rows to form absolute continuous vertical separators."
+    "buildTime": "19:42",
+    "description": "Removed all vertical column separators. The table now relies on spacing and alignment for structure."
 }

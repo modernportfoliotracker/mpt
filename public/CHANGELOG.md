@@ -1,5 +1,8 @@
 # Changelog
 
+## v131 - 04/01/2026 19:42
+- UI: **Removed Column Separators**. Completely removed the vertical lines (`border-right`) from the Asset Table (Headers, Groups, and Rows) based on user feedback. The table structure now relies purely on grid alignment.
+
 ## v129 - 04/01/2026 19:40
 - UI: **Absolute Column Separation (abc/def Mode)**. Eliminated all horizontal gaps and inter-row/group spaces. Vertical separators now form a 100% solid, unbroken line from the top of the table to the bottom.
 - UI: Removed all `border-bottom` from rows and group headers to prioritize continuous vertical flow.

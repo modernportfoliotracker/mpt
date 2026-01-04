@@ -182,7 +182,7 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
                 gap: 0,
                 height: '100%',
                 paddingLeft: isUltraHighDensity ? '0.05rem' : '0.2rem',
-                borderRight: '1px solid rgba(0,0,0,0.6)',
+                borderRight: 'none',
                 borderBottom: 'none',
                 background: isDragging ? 'rgba(0,0,0,0.05)' : 'transparent',
                 overflow: 'hidden'
@@ -321,7 +321,7 @@ function AssetTableRow({
 
     const commonCellStyles: React.CSSProperties = {
         padding: cellPadding,
-        borderRight: '1px solid rgba(0,0,0,0.6)',
+        borderRight: 'none',
         borderBottom: 'none',
         display: 'flex',
         alignItems: 'center',
@@ -1117,7 +1117,7 @@ const AssetGroupHeader = ({
                         alignItems: 'center',
                         justifyContent: isFirst || isName ? 'flex-start' : 'center',
                         padding: '0 0.4rem',
-                        borderRight: isLast ? 'none' : '1px solid rgba(0,0,0,0.6)',
+                        borderRight: 'none',
                         overflow: 'hidden'
                     }}>
                         {isFirst && (
