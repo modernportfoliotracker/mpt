@@ -182,7 +182,8 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
                 gap: isUltraHighDensity ? '1px' : '3px',
                 height: '100%',
                 paddingLeft: isUltraHighDensity ? '0.05rem' : '0.2rem',
-                borderRight: '1px solid rgba(0,0,0,0.12)',
+                borderRight: '1px solid rgba(0,0,0,0.25)',
+                borderBottom: '1px solid rgba(0,0,0,0.15)',
                 background: isDragging ? 'rgba(0,0,0,0.05)' : 'transparent',
                 overflow: 'hidden'
             }}>
@@ -320,14 +321,14 @@ function AssetTableRow({
 
     const commonCellStyles: React.CSSProperties = {
         padding: cellPadding,
-        borderRight: '1px solid rgba(0,0,0,0.12)',
+        borderRight: '1px solid rgba(0,0,0,0.25)',
+        borderBottom: '1px solid rgba(0,0,0,0.15)',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
         minWidth: 0,
         position: 'relative',
-        gap: '0',
-        transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+        gap: '0'
     };
 
     const renderCell = (colId: ColumnId) => {
@@ -560,7 +561,7 @@ function AssetTableRow({
                 display: 'grid',
                 gridTemplateColumns: gridTemplate,
                 minHeight: isUltraHighDensity ? '1.8rem' : isHighDensity ? '2.2rem' : '3.5rem',
-                borderBottom: '1px solid rgba(0,0,0,0.05)',
+                borderBottom: 'none',
                 position: 'relative',
                 background: justUpdated
                     ? 'rgba(16, 185, 129, 0.1)'
@@ -580,9 +581,18 @@ function AssetTableRow({
                     <div key={colId} style={{
                         ...commonCellStyles,
                         justifyContent: isNumeric ? 'flex-end' : 'flex-start',
-                        transform: isHovered && isOwner && !isEditing ? 'translateX(-35px)' : 'none'
                     }}>
-                        {renderCell(colId)}
+                        <div style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: isNumeric ? 'flex-end' : 'flex-start',
+                            transform: isHovered && isOwner && !isEditing ? 'translateX(-35px)' : 'none',
+                            transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                        }}>
+                            {renderCell(colId)}
+                        </div>
                     </div>
                 );
             })}
@@ -2154,7 +2164,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                 {/* Table Header Always Show in List View */}
                                                 {true && (
                                                     <div className="asset-table-header glass-panel" style={{
-                                                        borderBottom: '2px solid rgba(0,0,0,0.1)',
+                                                        borderBottom: 'none',
                                                         borderRadius: '0.4rem 0.4rem 0 0',
                                                         alignItems: 'center',
                                                         display: 'grid',

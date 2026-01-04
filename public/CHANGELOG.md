@@ -1,5 +1,10 @@
 # Changelog
 
+## v125 - 04/01/2026 18:40
+- UI: **True Continuous Separators**. Moved divider borders into cells and increased opacity to 0.25 to ensure unbreakable vertical lines.
+- UI: **Fixed Grid Lines**. Grid lines now remain fixed during hover, while only the content performs the 35px shift.
+- UI: Enhanced visibility for horizontal separators (0.15 opacity) for a clearer 'black line' grid appearance.
+
 ## v124 - 04/01/2026 18:05
 - UI: **Lowered Short-Label Threshold**. Labels like CCY/EXCH. now activate starting at 7+ columns.
 - UI: **Continuous Vertical Separators**. Removed row indentation and gaps to ensure vertical divider lines are unbroken from header to bottom.

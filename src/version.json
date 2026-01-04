@@ -1,6 +1,6 @@
 {
-    "version": "v124",
+    "version": "v125",
     "buildDate": "04/01/2026",
-    "buildTime": "18:05",
-    "description": "Maximized table compactness, lowered dynamic header threshold (7+), and implemented continuous vertical separators."
+    "buildTime": "18:40",
+    "description": "Fixed vertical separator continuity and increased grid line visibility (black line appearance)."
 }
