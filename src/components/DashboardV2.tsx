@@ -117,9 +117,9 @@ const ALL_COLUMNS: ColumnConfig[] = [
     { id: 'TICKER', label: 'Ticker', isDefault: false },
     { id: 'EXCHANGE', label: 'Exchange', isDefault: false },
     { id: 'CURRENCY', label: 'Currency', isDefault: false },
-    { id: 'PRICE', label: 'Price (Org. CCY)', isDefault: true },
+    { id: 'PRICE', label: 'Price (Org)', isDefault: true },
     { id: 'PRICE_EUR', label: 'Price (€)', isDefault: false },
-    { id: 'VALUE', label: 'Value (Org. CCY)', isDefault: true },
+    { id: 'VALUE', label: 'Value (Org)', isDefault: true },
     { id: 'VALUE_EUR', label: 'Value (€)', isDefault: false },
     { id: 'PL', label: 'P&L', isDefault: true },
     { id: 'EARNINGS', label: 'Next Earnings Date', isDefault: false },
@@ -152,8 +152,8 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
     } = useSortable({ id });
 
     // Dynamic density
+    const isUltraHighDensity = columnsCount >= 10;
     const isHighDensity = columnsCount > 8;
-    const isMediumDensity = columnsCount > 5;
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -171,21 +171,29 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
             style={style}
             {...attributes}
             {...listeners}
-            id={id} // Explicitly pass ID for debugging
+            id={id}
             className={`col-${id.replace('col:', '').toLowerCase()}`}
         >
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
-                gap: isHighDensity ? '4px' : '8px',
+                gap: isHighDensity ? '2px' : '4px',
                 height: '100%',
-                paddingLeft: isHighDensity ? '0.2rem' : '0.5rem',
-                borderRight: '1px solid rgba(255,255,255,0.04)', // Vertical separator
-                background: isDragging ? 'rgba(255,255,255,0.05)' : 'transparent'
+                paddingLeft: isHighDensity ? '0.1rem' : '0.4rem',
+                borderRight: '1px solid rgba(255,255,255,0.06)',
+                background: isDragging ? 'rgba(255,255,255,0.05)' : 'transparent',
+                overflow: 'hidden'
             }}>
-                <span style={{ opacity: 0.2, cursor: 'grab', display: isHighDensity ? 'none' : 'block' }}><GripVertical size={10} /></span>
-                {children}
+                {!isUltraHighDensity && <span style={{ opacity: 0.15, cursor: 'grab' }}><GripVertical size={10} /></span>}
+                <div style={{
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    fontSize: isUltraHighDensity ? '0.6rem' : isHighDensity ? '0.65rem' : '0.7rem'
+                }}>
+                    {children}
+                </div>
             </div>
         </div>
     );
@@ -225,6 +233,7 @@ function AssetTableRow({
     const [editCustomGroup, setEditCustomGroup] = useState(asset.customGroup || ""); // New
     const [isSaving, setIsSaving] = useState(false);
     const [justUpdated, setJustUpdated] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
     // Calculate Conversion Rate
     let displayCurrency = positionsViewCurrency === 'ORG' ? asset.currency : positionsViewCurrency;
@@ -296,22 +305,24 @@ function AssetTableRow({
 
     // Dynamic Layout Logic
     const columnsCount = columns.length;
-    const isHighDensity = columnsCount > 8;
-    const isMediumDensity = columnsCount > 5;
+    const isUltraHighDensity = columnsCount >= 10;
+    const isHighDensity = columnsCount >= 8;
+    const isMediumDensity = columnsCount >= 5;
 
-    const fontSizeMain = isHighDensity ? '0.7rem' : isMediumDensity ? '0.78rem' : '0.85rem';
-    const fontSizeSub = isHighDensity ? '0.6rem' : isMediumDensity ? '0.65rem' : '0.7rem';
-    const cellPadding = isHighDensity ? '0.2rem 0.4rem' : isMediumDensity ? '0.4rem 0.6rem' : '0.6rem 0.8rem';
+    const fontSizeMain = isUltraHighDensity ? '0.62rem' : isHighDensity ? '0.68rem' : isMediumDensity ? '0.78rem' : '0.85rem';
+    const fontSizeSub = isUltraHighDensity ? '0.52rem' : isHighDensity ? '0.58rem' : isMediumDensity ? '0.65rem' : '0.7rem';
+    const cellPadding = isUltraHighDensity ? '0.1rem 0.2rem' : isHighDensity ? '0.2rem 0.35rem' : isMediumDensity ? '0.4rem 0.6rem' : '0.6rem 0.8rem';
 
     const gridTemplate = columns.map(c => COL_WIDTHS[c]).join(' ');
 
     const commonCellStyles: React.CSSProperties = {
         padding: cellPadding,
-        borderRight: '1px solid rgba(255,255,255,0.03)',
+        borderRight: '1px solid rgba(255,255,255,0.04)',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
-        minWidth: 0
+        minWidth: 0,
+        position: 'relative'
     };
 
     const renderCell = (colId: ColumnId) => {
@@ -328,9 +339,9 @@ function AssetTableRow({
                 break;
             case 'NAME':
                 cellContent = (
-                    <div className="col-name" style={{ display: 'flex', alignItems: 'center', gap: isHighDensity ? '0.4rem' : '0.8rem', minWidth: 0, width: '100%' }}>
-                        <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size={isHighDensity ? "1.4rem" : "2rem"} />
-                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: isEditing ? '4px' : '0', flex: 1 }}>
+                    <div className="col-name" style={{ display: 'flex', alignItems: 'center', gap: isHighDensity ? '0.3rem' : '0.8rem', minWidth: 0, width: '100%' }}>
+                        <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size={isUltraHighDensity ? "1.2rem" : isHighDensity ? "1.4rem" : "2rem"} />
+                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: isEditing ? '2px' : '0', flex: 1 }}>
                             {isEditing ? (
                                 <>
                                     <input
@@ -344,30 +355,28 @@ function AssetTableRow({
                                             border: '1px solid var(--glass-border)',
                                             borderRadius: '3px',
                                             color: 'var(--text-primary)',
-                                            fontSize: '0.7rem',
+                                            fontSize: '0.65rem',
                                             padding: '1px 2px',
                                             width: '100%',
                                         }}
                                     />
-                                    <div style={{ display: 'flex', gap: '3px' }}>
-                                        <input
-                                            type="text"
-                                            value={editSymbol}
-                                            onChange={(e) => setEditSymbol(e.target.value.toUpperCase())}
-                                            onClick={(e) => e.stopPropagation()}
-                                            placeholder="Ticker"
-                                            style={{
-                                                background: 'var(--glass-shine)',
-                                                border: '1px solid var(--glass-border)',
-                                                borderRadius: '3px',
-                                                color: 'var(--text-primary)',
-                                                fontSize: '0.65rem',
-                                                padding: '1px 2px',
-                                                width: '100%',
-                                                textTransform: 'uppercase'
-                                            }}
-                                        />
-                                    </div>
+                                    <input
+                                        type="text"
+                                        value={editSymbol}
+                                        onChange={(e) => setEditSymbol(e.target.value.toUpperCase())}
+                                        onClick={(e) => e.stopPropagation()}
+                                        placeholder="Ticker"
+                                        style={{
+                                            background: 'var(--glass-shine)',
+                                            border: '1px solid var(--glass-border)',
+                                            borderRadius: '3px',
+                                            color: 'var(--text-primary)',
+                                            fontSize: '0.6rem',
+                                            padding: '1px 2px',
+                                            width: '100%',
+                                            textTransform: 'uppercase'
+                                        }}
+                                    />
                                 </>
                             ) : (
                                 <>
@@ -382,23 +391,23 @@ function AssetTableRow({
                                     }}>
                                         {companyName}
                                     </span>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
-                                        <span style={{ fontSize: fontSizeSub, opacity: 0.4, fontWeight: 500 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px', overflow: 'hidden' }}>
+                                        <span style={{ fontSize: fontSizeSub, opacity: 0.4, fontWeight: 500, whiteSpace: 'nowrap' }}>
                                             {asset.symbol}
                                         </span>
-                                        {!isHighDensity && (
+                                        {!isUltraHighDensity && (
                                             <span style={{
                                                 fontSize: '0.65rem',
                                                 opacity: 0.8,
                                                 fontWeight: 600,
                                                 color: 'var(--accent)',
                                                 background: 'rgba(99, 102, 241, 0.1)',
-                                                padding: '0 4px',
+                                                padding: '0 3px',
                                                 borderRadius: '3px'
                                             }}>
                                                 x{asset.quantity >= 1000
                                                     ? (asset.quantity / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
-                                                    : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 1 })}
+                                                    : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                                             </span>
                                         )}
                                     </div>
@@ -434,7 +443,7 @@ function AssetTableRow({
                                     border: '1px solid var(--glass-border)',
                                     borderRadius: '3px',
                                     color: 'var(--text-primary)',
-                                    fontSize: '0.65rem',
+                                    fontSize: '0.6rem',
                                     padding: '1px 2px',
                                     textAlign: 'right'
                                 }}
@@ -472,30 +481,66 @@ function AssetTableRow({
                 break;
             case 'PL':
                 cellContent = (
-                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', width: '100%' }}>
+                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', width: '100%', position: 'relative' }}>
                         {isEditing ? (
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '2px' }}>
-                                <button onClick={handleSave} disabled={isSaving} style={{ background: '#10b981', border: 'none', color: '#000', cursor: 'pointer', padding: '2px', borderRadius: '3px' }}>
-                                    {isSaving ? "..." : <Check size={12} />}
+                                <button onClick={handleSave} disabled={isSaving} style={{ background: '#10b981', border: 'none', color: '#000', cursor: 'pointer', padding: '1px', borderRadius: '3px' }}>
+                                    {isSaving ? ".." : <Check size={10} />}
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); setIsEditing(false); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', cursor: 'pointer', padding: '2px', borderRadius: '3px' }}>
-                                    <X size={12} />
+                                <button onClick={(e) => { e.stopPropagation(); setIsEditing(false); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', cursor: 'pointer', padding: '1px', borderRadius: '3px' }}>
+                                    <X size={10} />
                                 </button>
-                                <button onClick={handleDelete} style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', cursor: 'pointer', padding: '2px', borderRadius: '3px' }}>
-                                    <Trash2 size={12} />
+                                <button onClick={handleDelete} style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', cursor: 'pointer', padding: '1px', borderRadius: '3px' }}>
+                                    <Trash2 size={10} />
                                 </button>
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
-                                    {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
-                                </span>
-                                {!isHighDensity && (
-                                    <span style={{ fontSize: '0.65rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
-                                        {isPeriodProfit ? '+' : ''}{currencySymbol}{fmt(periodProfitVal, 0, 0)}
+                            <>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                    <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
+                                        {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
                                     </span>
+                                    {!isHighDensity && (
+                                        <span style={{ fontSize: '0.6rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
+                                            {isPeriodProfit ? '+' : ''}{currencySymbol}{fmt(periodProfitVal, 0, 0)}
+                                        </span>
+                                    )}
+                                </div>
+                                {isOwner && (
+                                    <div className="edit-trigger" style={{
+                                        position: 'absolute',
+                                        right: '-4px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        opacity: isHovered ? 1 : 0,
+                                        transition: 'opacity 0.2s',
+                                        zIndex: 10
+                                    }}>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setIsEditing(true);
+                                                setEditName(asset.name || "");
+                                                setEditSymbol(asset.symbol);
+                                                setEditCustomGroup(asset.customGroup || "");
+                                                setEditQty(asset.quantity);
+                                                setEditCost(asset.buyPrice);
+                                            }}
+                                            style={{
+                                                background: '#6366f1',
+                                                border: 'none',
+                                                color: '#fff',
+                                                cursor: 'pointer',
+                                                padding: '2px',
+                                                borderRadius: '50%',
+                                                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)'
+                                            }}
+                                        >
+                                            <Settings size={12} />
+                                        </button>
+                                    </div>
                                 )}
-                            </div>
+                            </>
                         )}
                     </div>
                 );
@@ -509,7 +554,7 @@ function AssetTableRow({
                         fontSize: fontSizeSub,
                         color: 'var(--text-secondary)',
                         background: 'var(--glass-shine)',
-                        padding: '1px 4px',
+                        padding: '1px 3px',
                         borderRadius: '2px',
                         border: '1px solid var(--glass-border)',
                         whiteSpace: 'nowrap',
@@ -535,18 +580,22 @@ function AssetTableRow({
     return (
         <div
             className="asset-table-grid row-container"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             style={{
                 display: 'grid',
                 gridTemplateColumns: gridTemplate,
-                minHeight: isHighDensity ? '2.5rem' : '3.5rem',
+                minHeight: isUltraHighDensity ? '2rem' : isHighDensity ? '2.5rem' : '3.5rem',
                 borderBottom: '1px solid rgba(255,255,255,0.04)',
                 background: justUpdated
                     ? 'rgba(16, 185, 129, 0.1)'
                     : isEditing
                         ? 'rgba(245, 158, 11, 0.05)'
-                        : (rowIndex !== undefined && rowIndex % 2 === 1)
-                            ? 'rgba(255,255,255,0.01)'
-                            : 'transparent'
+                        : isHovered
+                            ? 'rgba(255,255,255,0.03)'
+                            : (rowIndex !== undefined && rowIndex % 2 === 1)
+                                ? 'rgba(255,255,255,0.01)'
+                                : 'transparent'
             }}
         >
             {columns.map(colId => renderCell(colId))}

@@ -1,5 +1,11 @@
 # Changelog
 
+## v119 - 04/01/2026 16:21
+- UI: Shortened column headers (e.g., "Price (Org)") and forced single-line display to prevent wrapping.
+- UI: Restored the hover-activated "Gear" settings button for assets.
+- UI: Implemented **Ultra-High Density** mode (for 10+ columns) with even smaller fonts (0.62rem) and reduced padding to ensure minimum text occlusion.
+- Fix: Enhanced row hover effects and vertical alignment in compact views.
+
 ## v118 - 04/01/2026 15:35
 - Feature: **Dynamic List Density**. The table now automatically adjusts font sizes, padding, and layout based on the number of selected columns.
 - UI: Added subtle vertical separators between columns for better visual structure.

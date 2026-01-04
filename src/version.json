@@ -1,6 +1,6 @@
 {
-    "version": "v118",
+    "version": "v119",
     "buildDate": "04/01/2026",
-    "buildTime": "15:35",
-    "description": "Implemented high-density list view with dynamic font sizing, vertical separators, and improved text alignment for multi-column layouts."
+    "buildTime": "16:21",
+    "description": "Fixed header wrapping, restored hover-edit button, and implemented ultra-compact mode (10+ columns)."
 }
