@@ -1,6 +1,6 @@
 {
-    "version": "v131",
+    "version": "v1.0.7",
     "buildDate": "04/01/2026",
-    "buildTime": "19:42",
-    "description": "Removed all vertical column separators. The table now relies on spacing and alignment for structure."
+    "buildTime": "20:15",
+    "description": "List View only, enhanced metrics, and smart P&L currency."
 }
