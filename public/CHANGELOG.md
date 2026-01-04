@@ -1,5 +1,9 @@
 # Changelog
 
+## v134 - 04/01/2026 20:25
+- UI: **Dynamic Currency Headers**. Removed "(Org)" labels. Headers like "PRICE (€)" or "P&L (€)" now automatically update to reflect the selected global currency (e.g., "PRICE ($)" or "P&L ($)" when viewing in USD).
+- Fix: **Native vs Global Columns**. "Price" and "Value" columns now strictly show the asset's original currency values, while the converted columns strictly follow the user's selected global currency.
+
 ## v133 - 04/01/2026 20:20
 - UI: **Default Column Reset**: Updated the "Adjust List" menu button to **"Default"**. Clicking it now restores the optimal column layout: Portfolio -> Name -> Price -> Value -> Price (€) -> Value (€) -> P&L.
 

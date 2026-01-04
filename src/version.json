@@ -1,6 +1,6 @@
 {
-    "version": "v133",
+    "version": "v134",
     "buildDate": "04/01/2026",
-    "buildTime": "20:20",
-    "description": "Updated Default columns reset button."
+    "buildTime": "20:25",
+    "description": "Dynamic headers and strict native/global currency columns."
 }

@@ -240,25 +240,25 @@ function AssetTableRow({
     const [isHovered, setIsHovered] = useState(false);
 
     // Calculate Conversion Rate
-    let displayCurrency = positionsViewCurrency === 'ORG' ? asset.currency : positionsViewCurrency;
-    const rate = positionsViewCurrency === 'ORG' ? 1 : getRate(asset.currency, displayCurrency);
-    const currencySymbol = getCurrencySymbol(displayCurrency);
+    // Native (Original) Values for PRICE / VALUE columns
+    const nativePrice = asset.currentPrice;
+    const nativeTotalValue = asset.currentPrice * asset.quantity;
+    const nativeCostBasis = asset.buyPrice * asset.quantity;
+    const nativeSymbol = getCurrencySymbol(asset.currency);
 
-    // P&L Currency (Default to EUR if in ORG mode, else follow selection)
-    const pnlDisplayCurrency = positionsViewCurrency === 'ORG' ? 'EUR' : positionsViewCurrency;
-    const pnlSym = getCurrencySymbol(pnlDisplayCurrency);
+    // Global (Converted) Values for PRICE_EUR / VALUE_EUR / PL columns
+    // If View is ORG -> Global is EUR. If View is Specific (USD/TRY) -> Global is that specific currency.
+    const globalCurrency = positionsViewCurrency === 'ORG' ? 'EUR' : positionsViewCurrency;
+    const globalRate = getRate(asset.currency, globalCurrency);
+    const globalSymbol = getCurrencySymbol(globalCurrency);
 
-    const displayPrice = asset.currentPrice * rate;
-    const displayAvgPrice = asset.buyPrice * rate;
-    const displayTotalValue = (asset.currentPrice * asset.quantity) * rate;
-    const displayCostBasis = (asset.buyPrice * asset.quantity) * rate;
+    const globalPrice = asset.currentPrice * globalRate;
+    const globalAvgPrice = asset.buyPrice * globalRate;
+    const globalTotalValue = nativeTotalValue * globalRate;
+    const globalCostBasis = nativeCostBasis * globalRate;
 
-    // P&L Values (Calculated in pnlDisplayCurrency)
-    const pnlRate = getRate(asset.currency, pnlDisplayCurrency);
-    const pnlTotalVal = (asset.currentPrice * asset.quantity) * pnlRate;
-    const pnlCostBasis = (asset.buyPrice * asset.quantity) * pnlRate;
-
-    const totalProfitVal = pnlTotalVal - pnlCostBasis;
+    // P&L uses Global Values
+    const totalProfitVal = globalTotalValue - globalCostBasis;
     const totalProfitPct = asset.plPercentage;
 
     // P&L based on Time Factor or Real 1D Data
@@ -269,9 +269,10 @@ function AssetTableRow({
         // Use Real 1D Data (asset.dailyChange is in EUR)
         periodProfitPct = asset.dailyChangePercentage || 0;
 
-        // Convert dailyChange (EUR) to P&L Display Currency
-        const conversionRate = getRate('EUR', pnlDisplayCurrency);
-        periodProfitVal = (asset.dailyChange || 0) * conversionRate;
+        // Convert dailyChange (EUR) to Global Display Currency
+        // We know dailyChange is EUR, so we need EUR -> Global Rate
+        const eurToGlobalRate = getRate('EUR', globalCurrency);
+        periodProfitVal = (asset.dailyChange || 0) * eurToGlobalRate;
     }
 
     const isPeriodProfit = periodProfitVal >= 0;
@@ -439,8 +440,8 @@ function AssetTableRow({
             case 'PRICE':
                 cellContent = (
                     <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', width: '100%' }}>
-                        <span style={{ fontSize: fontSizeMain, fontWeight: 500, opacity: 0.9 }}>{currencySymbol}{fmt(displayPrice)}</span>
-                        {!isEditing && <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{currencySymbol}{fmt(displayAvgPrice)}</span>}
+                        <span style={{ fontSize: fontSizeMain, fontWeight: 500, opacity: 0.9 }}>{nativeSymbol}{fmt(nativePrice)}</span>
+                        {!isEditing && <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{nativeSymbol}{fmt(asset.buyPrice)}</span>}
                         {isEditing && (
                             <input
                                 type="number"
@@ -465,26 +466,25 @@ function AssetTableRow({
             case 'PRICE_EUR':
                 cellContent = (
                     <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', width: '100%' }}>
-                        <span style={{ fontSize: fontSizeMain, fontWeight: 500, opacity: 0.9 }}>€{fmt(asset.currentPrice * getRate(asset.currency, 'EUR'))}</span>
-                        <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>€{fmt(asset.buyPrice * getRate(asset.currency, 'EUR'))}</span>
+                        <span style={{ fontSize: fontSizeMain, fontWeight: 500, opacity: 0.9 }}>{globalSymbol}{fmt(globalPrice)}</span>
+                        <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{globalSymbol}{fmt(globalAvgPrice)}</span>
                     </div>
                 );
                 break;
             case 'VALUE':
                 cellContent = (
                     <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', width: '100%' }}>
-                        <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(displayTotalValue, 0, 0)}</span>
-                        {!isHighDensity && <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{currencySymbol}{fmt(displayCostBasis, 0, 0)}</span>}
+                        <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: 'var(--text-primary)' }}>{nativeSymbol}{fmt(nativeTotalValue, 0, 0)}</span>
+                        {!isHighDensity && <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{nativeSymbol}{fmt(nativeCostBasis, 0, 0)}</span>}
                     </div>
                 );
                 break;
             case 'VALUE_EUR':
                 {
-                    const costEUR = (asset.buyPrice * asset.quantity) * getRate(asset.currency, 'EUR');
                     cellContent = (
                         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', width: '100%' }}>
-                            <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: 'var(--text-primary)' }}>€{fmt(asset.totalValueEUR, 0, 0)}</span>
-                            {!isHighDensity && <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>€{fmt(costEUR, 0, 0)}</span>}
+                            <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: 'var(--text-primary)' }}>{globalSymbol}{fmt(globalTotalValue, 0, 0)}</span>
+                            {!isHighDensity && <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{globalSymbol}{fmt(globalCostBasis, 0, 0)}</span>}
                         </div>
                     );
                 }
@@ -514,7 +514,7 @@ function AssetTableRow({
                                     {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
                                 </span>
                                 <span style={{ fontSize: '0.6rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
-                                    {isPeriodProfit ? '+' : ''}{pnlSym}{fmt(periodProfitVal, 0, 0)}
+                                    {isPeriodProfit ? '+' : ''}{globalSymbol}{fmt(periodProfitVal, 0, 0)}
                                 </span>
                             </div>
                         )}
@@ -1919,7 +1919,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                         }}
                                     >
                                         {[
-                                            { value: 'none', label: 'Flat' },
+                                            { value: 'none', label: 'Ungrouped' },
                                             { value: 'customGroup', label: 'Portfolio' },
                                             { value: 'type', label: 'Type' },
                                             { value: 'country', label: 'Country' }
@@ -2121,11 +2121,15 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                 if (activeColumns.length >= 7) {
                                                                     if (colId === 'EXCHANGE') label = 'EXCH.';
                                                                     if (colId === 'CURRENCY') label = 'CCY';
-                                                                    if (colId === 'PRICE') label = 'PRICE\n(ORG)';
-                                                                    if (colId === 'PRICE_EUR') label = 'PRICE\n(€)';
-                                                                    if (colId === 'VALUE') label = 'VALUE\n(ORG)';
-                                                                    if (colId === 'VALUE_EUR') label = 'VALUE\n(€)';
                                                                 }
+
+                                                                // Dynamic Header Labels for Currency
+                                                                const globalCurrency = positionsViewCurrency === 'ORG' ? 'EUR' : positionsViewCurrency;
+                                                                const globalSym = getCurrencySymbol(globalCurrency);
+
+                                                                if (colId === 'PRICE_EUR') label = `PRICE (${globalSym})`;
+                                                                if (colId === 'VALUE_EUR') label = `VALUE (${globalSym})`;
+                                                                if (colId === 'PL') label = `P&L (${globalSym})`;
 
                                                                 return (
                                                                     <DraggableHeader key={colId} id={`col:${colId}`} columnsCount={activeColumns.length}>
