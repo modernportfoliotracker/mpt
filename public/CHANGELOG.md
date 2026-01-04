@@ -1,5 +1,10 @@
 # Changelog
 
+## v128 - 04/01/2026 19:35
+- UI: **Absolute Vertical Continuity**. Rebuilt the Asset Group headers to utilize the same internal grid system as the asset list. This allows the vertical dividers to extend seamlessly from the header through group titles to the bottom of the table.
+- UI: **Solid Grid Architecture**. Removed all inter-row and inter-group margins and padding to ensure a 100% flush, gap-free table layout with prominent vertical separators.
+- UI: Increased vertical divider opacity to 0.4 for a crisp, professional black-line grid appearance.
+
 ## v127 - 04/01/2026 19:15
 - UI: **Unified Table Structure**. Merged the header and asset list into a single, seamless container to eliminate all visual gaps.
 - UI: **True Column Separators**. Vertical lines are now perfectly continuous from the very top to the bottom of the table, regardless of rows or groups.

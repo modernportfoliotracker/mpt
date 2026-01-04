@@ -182,8 +182,8 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
                 gap: isUltraHighDensity ? '1px' : '3px',
                 height: '100%',
                 paddingLeft: isUltraHighDensity ? '0.05rem' : '0.2rem',
-                borderRight: '1px solid rgba(0,0,0,0.3)',
-                borderBottom: '1px solid rgba(0,0,0,0.18)',
+                borderRight: '1px solid rgba(0,0,0,0.4)',
+                borderBottom: '1px solid rgba(0,0,0,0.2)',
                 background: isDragging ? 'rgba(0,0,0,0.05)' : 'transparent',
                 overflow: 'hidden'
             }}>
@@ -321,8 +321,8 @@ function AssetTableRow({
 
     const commonCellStyles: React.CSSProperties = {
         padding: cellPadding,
-        borderRight: '1px solid rgba(0,0,0,0.3)',
-        borderBottom: '1px solid rgba(0,0,0,0.18)',
+        borderRight: '1px solid rgba(0,0,0,0.4)',
+        borderBottom: '1px solid rgba(0,0,0,0.2)',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
@@ -1051,7 +1051,9 @@ const AssetGroupHeader = ({
     fmt,
     dragHandleProps,
     isExpanded,
-    onToggle
+    onToggle,
+    gridTemplate,
+    columns
 }: {
     type: string,
     count: number,
@@ -1062,7 +1064,9 @@ const AssetGroupHeader = ({
     fmt: (val: number) => string,
     dragHandleProps?: any,
     isExpanded?: boolean,
-    onToggle?: () => void
+    onToggle?: () => void,
+    gridTemplate?: string,
+    columns?: ColumnId[]
 }) => {
     const [isHovered, setIsHovered] = useState(false);
 
@@ -1087,83 +1091,75 @@ const AssetGroupHeader = ({
             className="asset-group-header"
             style={{
                 cursor: 'pointer',
-                display: 'flex',
+                display: 'grid',
+                gridTemplateColumns: gridTemplate || '1fr',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.4rem 0.8rem',
-                background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.2), rgba(79, 70, 229, 0.1))',
+                padding: '0',
+                background: 'linear-gradient(90deg, rgba(99, 102, 241, 0.25), rgba(79, 70, 229, 0.15))',
                 borderRadius: '0',
-                borderBottom: '1px solid rgba(0,0,0,0.2)',
+                borderBottom: '1px solid rgba(0,0,0,0.3)',
                 marginBottom: '0',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                userSelect: 'none'
+                userSelect: 'none',
+                minHeight: '2.8rem'
             }}
         >
             {/* Left Side: Group Info */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                {/* Expander Arrow */}
-                <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: isExpanded ? 'var(--text-primary)' : 'var(--text-muted)',
-                    transition: 'transform 0.3s ease',
-                    transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
-                }}>
-                    <ChevronDown size={16} /> {/* Smaller Icon */}
-                </div>
+            {columns?.map((colId, idx) => {
+                const isFirst = idx === 0;
+                const isName = colId === 'NAME';
+                const isLast = idx === columns.length - 1;
 
-                {/* Icon Circle */}
-                <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: '1.8rem', height: '1.8rem',
-                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', // Vivid Gradient (Indigo -> Purple)
-                    borderRadius: '50%',
-                    color: '#fff',
-                    border: '1px solid rgba(255, 255, 255, 0.2)', // Subtle inner border
-                    boxShadow: '0 2px 6px rgba(99, 102, 241, 0.4)' // Glow effect
-                }}>
-                    {getGroupIcon(type)}
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0px' }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '0.01em', lineHeight: 1.1 }}>{type}</span>
-                    <span style={{ fontSize: '0.65rem', opacity: 0.6, fontWeight: 500 }}>{count} Assets</span>
-                </div>
-            </div>
-
-            {/* Right Side: Totals (Aligned Columns) */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                {/* Percentage Badge - Fixed Width for Vertical Alignment */}
-                <div style={{
-                    width: '3rem', // Fixed width to align vertically
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    color: '#fff',
-                    background: '#6366f1',
-                    padding: '0.15rem 0',
-                    borderRadius: '1rem',
-                    boxShadow: '0 2px 4px rgba(99, 102, 241, 0.3)'
-                }}>
-                    {percentage.toFixed(0)}%
-                </div>
-
-                {/* Amount - Fixed Min-Width for Vertical Alignment */}
-                <div style={{
-                    minWidth: '6rem', // Fixed min-width so percentage doesn't shift
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-end', // Right align
-                    textAlign: 'right'
-                }}>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)' }}>{currencySymbol}{fmt(totalEUR * rate)}</span>
-                </div>
-            </div>
+                return (
+                    <div key={colId} style={{
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: isFirst || isName ? 'flex-start' : 'center',
+                        padding: '0 0.4rem',
+                        borderRight: isLast ? 'none' : '1px solid rgba(0,0,0,0.4)',
+                        overflow: 'hidden'
+                    }}>
+                        {isFirst && (
+                            <div style={{
+                                color: isExpanded ? 'var(--text-primary)' : 'var(--text-muted)',
+                                transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)',
+                                transition: 'transform 0.3s ease'
+                            }}>
+                                <ChevronDown size={14} />
+                            </div>
+                        )}
+                        {isName && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: isFirst ? '0.4rem' : '0' }}>
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    width: '1.4rem', height: '1.4rem',
+                                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                    borderRadius: '50%',
+                                    color: '#fff'
+                                }}>
+                                    {getGroupIcon(type)}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 800 }}>{type}</span>
+                                    <span style={{ fontSize: '0.6rem', opacity: 0.6 }}>{count} Assets</span>
+                                </div>
+                            </div>
+                        )}
+                        {idx === columns.length - 1 && (
+                            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 700, background: '#6366f1', color: '#fff', padding: '0.1rem 0.4rem', borderRadius: '1rem' }}>
+                                    {percentage.toFixed(0)}%
+                                </div>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 800 }}>{currencySymbol}{fmt(totalEUR * rate)}</span>
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
         </div>
     );
 };
-
 
 // Actually simpler: Just accept the header props and grid children?
 // Or just let this component render the header and children.
@@ -1235,6 +1231,8 @@ function AssetGroup({
                 dragHandleProps={dragHandleProps}
                 isExpanded={isExpanded}
                 onToggle={() => setIsExpanded(!isExpanded)}
+                gridTemplate={columns ? columns.map(c => COL_WIDTHS[c]).join(' ') : '1fr'}
+                columns={columns}
             />
 
             {/* Assets in Group - Collapsible */}

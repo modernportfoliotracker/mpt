@@ -1,6 +1,6 @@
 {
-    "version": "v127",
+    "version": "v128",
     "buildDate": "04/01/2026",
-    "buildTime": "19:15",
-    "description": "Unified table architecture for true column-wide vertical separators. Eliminated all inter-row and inter-group gaps."
+    "buildTime": "19:35",
+    "description": "Absolute Vertical Continuity. Rebuilt group headers to align with the table grid, ensuring unbroken column separators from header to bottom."
 }

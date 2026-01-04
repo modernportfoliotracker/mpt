@@ -42,8 +42,7 @@ export function SortableGroup({ id, children }: { id: string, children: React.Re
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
-        marginBottom: '1rem'
+        opacity: isDragging ? 0.5 : 1
     };
 
     return (
