@@ -179,7 +179,7 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
-                gap: isUltraHighDensity ? '1px' : '3px',
+                gap: 0,
                 height: '100%',
                 paddingLeft: isUltraHighDensity ? '0.05rem' : '0.2rem',
                 borderRight: '1px solid rgba(0,0,0,0.6)',
