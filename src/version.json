@@ -1,6 +1,6 @@
 {
-    "version": "v120",
+    "version": "v121",
     "buildDate": "04/01/2026",
-    "buildTime": "16:29",
-    "description": "Implemented extreme-density table mode with dynamic column widths, zero-gutter spacing, and strict width caps for text columns."
+    "buildTime": "16:38",
+    "description": "Optimized table layout for 12-column fit: shortened 'NED' header, enabled 2-line headers, and added visible column separators."
 }

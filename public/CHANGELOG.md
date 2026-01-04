@@ -1,5 +1,11 @@
 # Changelog
 
+## v121 - 04/01/2026 16:38
+- UI: Shortened **Next Earnings Date** to **NED** in the table header to save space.
+- UI: Enabled **2-line headers** so labels can wrap elegantly without being cut off.
+- UI: Added **visible vertical separators** between columns for clearer data distinction.
+- UI: Further reduced padding and font sizes (to 0.55rem) in extreme density mode to ensure all 12 columns fit on the dashboard.
+
 ## v120 - 04/01/2026 16:29
 - Feature: **Extreme-Density Mode**. The table now uses a zero-gutter layout and dynamic width scaling for 12+ columns.
 - UI: Enforced a strict 120px minimum/cap balance for the **Name** column to prevent pushing other columns off-screen.

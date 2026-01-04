@@ -122,23 +122,23 @@ const ALL_COLUMNS: ColumnConfig[] = [
     { id: 'VALUE', label: 'Value (Org)', isDefault: true },
     { id: 'VALUE_EUR', label: 'Value (€)', isDefault: false },
     { id: 'PL', label: 'P&L', isDefault: true },
-    { id: 'EARNINGS', label: 'Next Earnings Date', isDefault: false },
+    { id: 'EARNINGS', label: 'NED', isDefault: false },
     { id: 'PORTFOLIO_NAME', label: 'Portfolio', isDefault: false },
 ];
 
 const COL_WIDTHS: Record<ColumnId, string> = {
-    TYPE: 'minmax(40px, 0.5fr)',
-    NAME: 'minmax(120px, 1.4fr)',
-    TICKER: 'minmax(45px, 0.45fr)',
-    EXCHANGE: 'minmax(55px, 0.6fr)',
-    CURRENCY: 'minmax(40px, 0.4fr)',
-    PRICE: 'minmax(65px, 0.8fr)',
-    PRICE_EUR: 'minmax(65px, 0.8fr)',
-    VALUE: 'minmax(75px, 0.9fr)',
-    VALUE_EUR: 'minmax(75px, 0.9fr)',
-    PL: 'minmax(70px, 1fr)',
-    EARNINGS: 'minmax(60px, 0.8fr)',
-    PORTFOLIO_NAME: 'minmax(60px, 0.8fr)'
+    TYPE: 'minmax(35px, 0.4fr)',
+    NAME: 'minmax(100px, 1.3fr)',
+    TICKER: 'minmax(40px, 0.4fr)',
+    EXCHANGE: 'minmax(50px, 0.5fr)',
+    CURRENCY: 'minmax(35px, 0.35fr)',
+    PRICE: 'minmax(60px, 0.75fr)',
+    PRICE_EUR: 'minmax(60px, 0.75fr)',
+    VALUE: 'minmax(70px, 0.85fr)',
+    VALUE_EUR: 'minmax(70px, 0.85fr)',
+    PL: 'minmax(65px, 0.9fr)',
+    EARNINGS: 'minmax(40px, 0.5fr)',
+    PORTFOLIO_NAME: 'minmax(55px, 0.7fr)'
 };
 
 const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: string, children: React.ReactNode, onToggle?: () => void, columnsCount?: number }) => {
@@ -178,19 +178,21 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'flex-start',
-                gap: isUltraHighDensity ? '1px' : isHighDensity ? '2px' : '4px',
+                gap: isUltraHighDensity ? '1px' : '3px',
                 height: '100%',
-                paddingLeft: isUltraHighDensity ? '0.1rem' : isHighDensity ? '0.2rem' : '0.4rem',
-                borderRight: '1px solid rgba(255,255,255,0.06)',
+                paddingLeft: isUltraHighDensity ? '0.1rem' : '0.3rem',
+                borderRight: '1px solid rgba(255,255,255,0.08)',
                 background: isDragging ? 'rgba(255,255,255,0.05)' : 'transparent',
                 overflow: 'hidden'
             }}>
-                {columnsCount < 11 && <span style={{ opacity: 0.15, cursor: 'grab' }}><GripVertical size={10} /></span>}
+                {columnsCount < 12 && <span style={{ opacity: 0.1, cursor: 'grab' }}><GripVertical size={9} /></span>}
                 <div style={{
-                    whiteSpace: 'nowrap',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
                     overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    fontSize: isUltraHighDensity ? '0.58rem' : isHighDensity ? '0.65rem' : '0.7rem'
+                    lineHeight: 1.1,
+                    fontSize: isUltraHighDensity ? '0.55rem' : isHighDensity ? '0.62rem' : '0.7rem'
                 }}>
                     {children}
                 </div>
@@ -317,13 +319,13 @@ function AssetTableRow({
 
     const commonCellStyles: React.CSSProperties = {
         padding: cellPadding,
-        borderRight: '1px solid rgba(255,255,255,0.04)',
+        borderRight: '1px solid rgba(255,255,255,0.06)',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
         minWidth: 0,
         position: 'relative',
-        gap: isUltraHighDensity ? '1px' : '4px'
+        gap: isUltraHighDensity ? '1px' : '2px'
     };
 
     const renderCell = (colId: ColumnId) => {
