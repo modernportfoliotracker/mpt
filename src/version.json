@@ -1,6 +1,6 @@
 {
-    "version": "v123",
+    "version": "v124",
     "buildDate": "04/01/2026",
-    "buildTime": "17:15",
-    "description": "Enhanced table density with dynamic header shortening, uniform font sizes, whole-row hover shifting for Gear icon, and high-visibility separators."
+    "buildTime": "18:05",
+    "description": "Maximized table compactness, lowered dynamic header threshold (7+), and implemented continuous vertical separators."
 }

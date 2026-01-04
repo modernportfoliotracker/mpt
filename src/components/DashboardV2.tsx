@@ -154,7 +154,7 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
 
     // Dynamic density
     const isUltraHighDensity = columnsCount >= 10;
-    const isHighDensity = columnsCount >= 8;
+    const isHighDensity = columnsCount >= 7;
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -181,8 +181,8 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
                 justifyContent: 'flex-start',
                 gap: isUltraHighDensity ? '1px' : '3px',
                 height: '100%',
-                paddingLeft: isUltraHighDensity ? '0.1rem' : '0.3rem',
-                borderRight: '1px solid rgba(0,0,0,0.15)',
+                paddingLeft: isUltraHighDensity ? '0.05rem' : '0.2rem',
+                borderRight: '1px solid rgba(0,0,0,0.12)',
                 background: isDragging ? 'rgba(0,0,0,0.05)' : 'transparent',
                 overflow: 'hidden'
             }}>
@@ -309,24 +309,24 @@ function AssetTableRow({
     // Dynamic Layout Logic
     const columnsCount = columns.length;
     const isUltraHighDensity = columnsCount >= 10;
-    const isHighDensity = columnsCount >= 8;
+    const isHighDensity = columnsCount >= 7;
     const isMediumDensity = columnsCount >= 5;
 
-    const fontSizeMain = isUltraHighDensity ? '0.6rem' : isHighDensity ? '0.68rem' : isMediumDensity ? '0.78rem' : '0.85rem';
-    const fontSizeSub = isUltraHighDensity ? '0.5rem' : isHighDensity ? '0.58rem' : isMediumDensity ? '0.65rem' : '0.7rem';
-    const cellPadding = isUltraHighDensity ? '0.05rem 0.15rem' : isHighDensity ? '0.2rem 0.35rem' : isMediumDensity ? '0.4rem 0.6rem' : '0.6rem 0.8rem';
+    const fontSizeMain = isUltraHighDensity ? '0.58rem' : isHighDensity ? '0.65rem' : isMediumDensity ? '0.75rem' : '0.85rem';
+    const fontSizeSub = isUltraHighDensity ? '0.48rem' : isHighDensity ? '0.55rem' : isMediumDensity ? '0.62rem' : '0.7rem';
+    const cellPadding = isUltraHighDensity ? '0.05rem 0.1rem' : isHighDensity ? '0.1rem 0.2rem' : isMediumDensity ? '0.3rem 0.5rem' : '0.6rem 0.8rem';
 
     const gridTemplate = columns.map(c => COL_WIDTHS[c]).join(' ');
 
     const commonCellStyles: React.CSSProperties = {
         padding: cellPadding,
-        borderRight: '1px solid rgba(0,0,0,0.08)',
+        borderRight: '1px solid rgba(0,0,0,0.12)',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
         minWidth: 0,
         position: 'relative',
-        gap: isUltraHighDensity ? '1px' : '2px',
+        gap: '0',
         transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
     };
 
@@ -559,7 +559,7 @@ function AssetTableRow({
             style={{
                 display: 'grid',
                 gridTemplateColumns: gridTemplate,
-                minHeight: isUltraHighDensity ? '2rem' : isHighDensity ? '2.5rem' : '3.5rem',
+                minHeight: isUltraHighDensity ? '1.8rem' : isHighDensity ? '2.2rem' : '3.5rem',
                 borderBottom: '1px solid rgba(0,0,0,0.05)',
                 position: 'relative',
                 background: justUpdated
@@ -1235,8 +1235,8 @@ function AssetGroup({
                 opacity: isExpanded ? 1 : 0,
                 overflow: 'hidden',
                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                paddingLeft: '0.5rem', // Indent
-                gap: '2px'
+                paddingLeft: '0', // No Indent
+                gap: '0' // No Gap for continuous dividers
             }}>
                 <SortableContext items={(assets || []).map(a => a.id)} strategy={verticalListSortingStrategy}>
                     {(assets || []).map(asset => (
@@ -2154,11 +2154,12 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                 {/* Table Header Always Show in List View */}
                                                 {true && (
                                                     <div className="asset-table-header glass-panel" style={{
-                                                        borderBottom: '1px solid var(--glass-border)',
-                                                        borderRadius: '0.5rem 0.5rem 0 0',
+                                                        borderBottom: '2px solid rgba(0,0,0,0.1)',
+                                                        borderRadius: '0.4rem 0.4rem 0 0',
                                                         alignItems: 'center',
                                                         display: 'grid',
-                                                        gridTemplateColumns: activeColumns.map(c => COL_WIDTHS[c]).join(' ')
+                                                        gridTemplateColumns: activeColumns.map(c => COL_WIDTHS[c]).join(' '),
+                                                        gap: 0
                                                     }}>
                                                         <SortableContext items={activeColumns.map(c => `col:${c}`)} strategy={rectSortingStrategy}>
                                                             {activeColumns.map(colId => {
@@ -2166,7 +2167,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                 let label = (colDef?.headerLabel || colDef?.label || colId).toUpperCase();
 
                                                                 // Dynamic label shortening for high column counts
-                                                                if (activeColumns.length >= 10) {
+                                                                if (activeColumns.length >= 7) {
                                                                     if (colId === 'EXCHANGE') label = 'EXCH.';
                                                                     if (colId === 'CURRENCY') label = 'CCY';
                                                                     if (colId === 'PRICE') label = 'PRICE\n(ORG)';

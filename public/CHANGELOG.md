@@ -1,5 +1,11 @@
 # Changelog
 
+## v124 - 04/01/2026 18:05
+- UI: **Lowered Short-Label Threshold**. Labels like CCY/EXCH. now activate starting at 7+ columns.
+- UI: **Continuous Vertical Separators**. Removed row indentation and gaps to ensure vertical divider lines are unbroken from header to bottom.
+- UI: **Extreme Compactness**. Further reduced cell padding, font sizes, and row heights for maximum data density.
+- UI: Unified separator styles across header and rows for a cleaner grid look.
+
 ## v123 - 04/01/2026 17:15
 - UI: Implemented **Dynamic Header Labels** (e.g., CCY, EXCH.) when 10+ columns are active.
 - UI: Enhanced **Hover Shift**. The entire row content now slides left by 35px on hover to provide clear space for the Gear icon.
