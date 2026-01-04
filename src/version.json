@@ -1,6 +1,6 @@
 {
-    "version": "v122",
+    "version": "v123",
     "buildDate": "04/01/2026",
-    "buildTime": "16:55",
-    "description": "Implemented content-shifting hover gear, visible column separators, and clearer 'Next Earnings Date (NED)' terminology."
+    "buildTime": "17:15",
+    "description": "Enhanced table density with dynamic header shortening, uniform font sizes, whole-row hover shifting for Gear icon, and high-visibility separators."
 }

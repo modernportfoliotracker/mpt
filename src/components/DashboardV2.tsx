@@ -182,8 +182,8 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
                 gap: isUltraHighDensity ? '1px' : '3px',
                 height: '100%',
                 paddingLeft: isUltraHighDensity ? '0.1rem' : '0.3rem',
-                borderRight: '1px solid rgba(255,255,255,0.18)',
-                background: isDragging ? 'rgba(255,255,255,0.05)' : 'transparent',
+                borderRight: '1px solid rgba(0,0,0,0.15)',
+                background: isDragging ? 'rgba(0,0,0,0.05)' : 'transparent',
                 overflow: 'hidden'
             }}>
                 {columnsCount < 12 && <span style={{ opacity: 0.1, cursor: 'grab' }}><GripVertical size={9} /></span>}
@@ -320,13 +320,14 @@ function AssetTableRow({
 
     const commonCellStyles: React.CSSProperties = {
         padding: cellPadding,
-        borderRight: '1px solid rgba(255,255,255,0.15)',
+        borderRight: '1px solid rgba(0,0,0,0.08)',
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
         minWidth: 0,
         position: 'relative',
-        gap: isUltraHighDensity ? '1px' : '2px'
+        gap: isUltraHighDensity ? '1px' : '2px',
+        transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
     };
 
     const renderCell = (colId: ColumnId) => {
@@ -499,61 +500,20 @@ function AssetTableRow({
                                 </button>
                             </div>
                         ) : (
-                            <>
-                                <div style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'flex-end',
-                                    transition: 'transform 0.2s',
-                                    transform: isHovered && isOwner ? 'translateX(-12px)' : 'none'
-                                }}>
-                                    <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
-                                        {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-end'
+                            }}>
+                                <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
+                                    {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
+                                </span>
+                                {!isHighDensity && (
+                                    <span style={{ fontSize: '0.6rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
+                                        {isPeriodProfit ? '+' : ''}{currencySymbol}{fmt(periodProfitVal, 0, 0)}
                                     </span>
-                                    {!isHighDensity && (
-                                        <span style={{ fontSize: '0.6rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
-                                            {isPeriodProfit ? '+' : ''}{currencySymbol}{fmt(periodProfitVal, 0, 0)}
-                                        </span>
-                                    )}
-                                </div>
-                                {isOwner && (
-                                    <div className="edit-trigger" style={{
-                                        position: 'absolute',
-                                        right: '1px',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        opacity: isHovered ? 1 : 0,
-                                        transition: 'all 0.2s',
-                                        zIndex: 10
-                                    }}>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setIsEditing(true);
-                                                setEditName(asset.name || "");
-                                                setEditSymbol(asset.symbol);
-                                                setEditCustomGroup(asset.customGroup || "");
-                                                setEditQty(asset.quantity);
-                                                setEditCost(asset.buyPrice);
-                                            }}
-                                            style={{
-                                                background: '#6366f1',
-                                                border: 'none',
-                                                color: '#fff',
-                                                cursor: 'pointer',
-                                                padding: '2px',
-                                                borderRadius: '0.3rem',
-                                                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center'
-                                            }}
-                                        >
-                                            <Settings size={isUltraHighDensity ? 10 : 12} />
-                                        </button>
-                                    </div>
                                 )}
-                            </>
+                            </div>
                         )}
                     </div>
                 );
@@ -564,15 +524,16 @@ function AssetTableRow({
             case 'PORTFOLIO_NAME':
                 cellContent = (
                     <span style={{
-                        fontSize: fontSizeSub,
+                        fontSize: fontSizeMain,
                         color: 'var(--text-secondary)',
-                        background: 'var(--glass-shine)',
+                        background: 'rgba(0,0,0,0.05)',
                         padding: '1px 3px',
                         borderRadius: '2px',
-                        border: '1px solid var(--glass-border)',
+                        border: '1px solid rgba(0,0,0,0.1)',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
-                        textOverflow: 'ellipsis'
+                        textOverflow: 'ellipsis',
+                        fontWeight: 600
                     }}>
                         {asset.customGroup || '-'}
                     </span>
@@ -599,19 +560,70 @@ function AssetTableRow({
                 display: 'grid',
                 gridTemplateColumns: gridTemplate,
                 minHeight: isUltraHighDensity ? '2rem' : isHighDensity ? '2.5rem' : '3.5rem',
-                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                borderBottom: '1px solid rgba(0,0,0,0.05)',
+                position: 'relative',
                 background: justUpdated
                     ? 'rgba(16, 185, 129, 0.1)'
                     : isEditing
                         ? 'rgba(245, 158, 11, 0.05)'
                         : isHovered
-                            ? 'rgba(255,255,255,0.03)'
+                            ? 'rgba(0,0,0,0.02)'
                             : (rowIndex !== undefined && rowIndex % 2 === 1)
-                                ? 'rgba(255,255,255,0.01)'
-                                : 'transparent'
+                                ? 'rgba(0,0,0,0.01)'
+                                : 'transparent',
+                overflow: 'hidden'
             }}
         >
-            {columns.map(colId => renderCell(colId))}
+            {columns.map(colId => {
+                const isNumeric = ['PRICE', 'PRICE_EUR', 'VALUE', 'VALUE_EUR', 'PL', 'EARNINGS'].includes(colId);
+                return (
+                    <div key={colId} style={{
+                        ...commonCellStyles,
+                        justifyContent: isNumeric ? 'flex-end' : 'flex-start',
+                        transform: isHovered && isOwner && !isEditing ? 'translateX(-35px)' : 'none'
+                    }}>
+                        {renderCell(colId)}
+                    </div>
+                );
+            })}
+
+            {isOwner && !isEditing && (
+                <div className="edit-trigger" style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    opacity: isHovered ? 1 : 0,
+                    transition: 'all 0.3s ease',
+                    zIndex: 20
+                }}>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsEditing(true);
+                            setEditName(asset.name || "");
+                            setEditSymbol(asset.symbol);
+                            setEditCustomGroup(asset.customGroup || "");
+                            setEditQty(asset.quantity);
+                            setEditCost(asset.buyPrice);
+                        }}
+                        style={{
+                            background: '#6366f1',
+                            border: 'none',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            padding: isUltraHighDensity ? '3px' : '4px',
+                            borderRadius: '0.4rem',
+                            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.5)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <Settings size={isUltraHighDensity ? 12 : 14} />
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
@@ -2151,10 +2163,30 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                         <SortableContext items={activeColumns.map(c => `col:${c}`)} strategy={rectSortingStrategy}>
                                                             {activeColumns.map(colId => {
                                                                 const colDef = ALL_COLUMNS.find(c => c.id === colId);
+                                                                let label = (colDef?.headerLabel || colDef?.label || colId).toUpperCase();
+
+                                                                // Dynamic label shortening for high column counts
+                                                                if (activeColumns.length >= 10) {
+                                                                    if (colId === 'EXCHANGE') label = 'EXCH.';
+                                                                    if (colId === 'CURRENCY') label = 'CCY';
+                                                                    if (colId === 'PRICE') label = 'PRICE\n(ORG)';
+                                                                    if (colId === 'PRICE_EUR') label = 'PRICE\n(€)';
+                                                                    if (colId === 'VALUE') label = 'VALUE\n(ORG)';
+                                                                    if (colId === 'VALUE_EUR') label = 'VALUE\n(€)';
+                                                                }
+
                                                                 return (
                                                                     <DraggableHeader key={colId} id={`col:${colId}`} columnsCount={activeColumns.length}>
-                                                                        <span style={{ fontSize: activeColumns.length > 8 ? '0.65rem' : '0.7rem', fontWeight: 700, opacity: 0.8, letterSpacing: '0.05em' }}>
-                                                                            {colId === 'PORTFOLIO_NAME' ? <Briefcase size={activeColumns.length > 8 ? 11 : 13} strokeWidth={2.5} /> : (colDef?.headerLabel || colDef?.label || colId).toUpperCase()}
+                                                                        <span style={{
+                                                                            fontSize: activeColumns.length > 8 ? '0.62rem' : '0.7rem',
+                                                                            fontWeight: 700,
+                                                                            opacity: 0.8,
+                                                                            letterSpacing: '0.05em',
+                                                                            whiteSpace: activeColumns.length >= 10 ? 'pre-wrap' : 'nowrap',
+                                                                            display: 'block',
+                                                                            textAlign: colId === 'NAME' ? 'left' : 'center'
+                                                                        }}>
+                                                                            {colId === 'PORTFOLIO_NAME' ? <Briefcase size={activeColumns.length > 8 ? 11 : 13} strokeWidth={2.5} /> : label}
                                                                         </span>
                                                                     </DraggableHeader>
                                                                 );

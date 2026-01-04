@@ -1,5 +1,12 @@
 # Changelog
 
+## v123 - 04/01/2026 17:15
+- UI: Implemented **Dynamic Header Labels** (e.g., CCY, EXCH.) when 10+ columns are active.
+- UI: Enhanced **Hover Shift**. The entire row content now slides left by 35px on hover to provide clear space for the Gear icon.
+- UI: Standardized **Font Sizes**. Portfolio column and numerical columns now use perfectly uniform typography.
+- UI: Added **High-Visibility Separators** (darker lines) for better grid structure in all view modes.
+- UI: Multi-line headers are now enabled for Value/Price metrics in dense views.
+
 ## v122 - 04/01/2026 16:55
 - Feature: **Content-Shifting Gear**. When hovering over an asset, the P&L text now smoothly slides left to make room for the gear icon on the far right.
 - UI: Updated **Next Earnings Date (NED)** in the column selection menu for better clarity while keeping it as **NED** on the dashboard.
