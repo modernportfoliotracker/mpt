@@ -18,9 +18,10 @@ export const getCurrencySymbol = (currency: string): string => {
 };
 
 // Calculate exchange rate from source currency to target currency
-export const getRate = (from: string, to: string): number => {
-    const fromRate = RATES[from];
-    const toRate = RATES[to];
+export const getRate = (from: string, to: string, customRates?: Record<string, number>): number => {
+    const rates = customRates || RATES;
+    const fromRate = rates[from];
+    const toRate = rates[to];
 
     // Fallback if currency not found
     if (!fromRate || !toRate) return 1;
@@ -29,6 +30,6 @@ export const getRate = (from: string, to: string): number => {
 };
 
 // Convert value
-export const convertCurrency = (amount: number, from: string, to: string): number => {
-    return amount * getRate(from, to);
+export const convertCurrency = (amount: number, from: string, to: string, customRates?: Record<string, number>): number => {
+    return amount * getRate(from, to, customRates);
 };

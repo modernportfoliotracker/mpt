@@ -50,9 +50,16 @@ model Asset {
   portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
 }
 
+
 model PriceCache {
   symbol    String   @id
   price     Float
   currency  String
+  updatedAt DateTime @updatedAt
+}
+
+model ExchangeRate {
+  currency  String   @id
+  rate      Float
   updatedAt DateTime @updatedAt
 }

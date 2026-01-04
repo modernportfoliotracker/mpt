@@ -1,5 +1,14 @@
 # Changelog
 
+## v138 - 04/01/2026 21:25
+- Feature: **Automated Exchange Rate Updates**. The system now automatically fetches and refreshes currency exchange rates twice daily (08:00 and 17:00 CET) to ensure accurate portfolio valuations.
+- Fix: **Stale Currency Data**. Solved an issue where currency conversions were using outdated rates.
+- UI: **Linting & Stability**. Resolved various type errors and linting warnings in the dashboard components for improved stability.
+
+## v137 - 04/01/2026 21:00
+- Fix: **Filter Bar Z-Index**. Solved an issue where the filter dropdowns were appearing behind the dashboard content.
+- UI: **Compact Filter Bar**. The filter bar is now strictly one line (`flex-nowrap`), with reduced spacing and font sizes (`0.65rem`) to fit all filters including "Platform" horizontally.
+
 ## v136 - 04/01/2026 20:55
 - UI: **Total Cost Basis**. The "Value" column now displays the asset's total cost basis (Buy Price × Quantity) in its original currency, faded underneath the current market value.
 - UI: **Compact Rows**. Significantly reduced row height and vertical padding to fit more assets on a single screen.

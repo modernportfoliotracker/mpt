@@ -11,9 +11,10 @@ interface ClientWrapperProps {
     totalValueEUR: number;
     assets: any[];
     navbar: ReactNode;
+    exchangeRates?: Record<string, number>;
 }
 
-export function ClientWrapper({ username, isOwner, totalValueEUR, assets, navbar }: ClientWrapperProps) {
+export function ClientWrapper({ username, isOwner, totalValueEUR, assets, navbar, exchangeRates }: ClientWrapperProps) {
     const [showChangelog, setShowChangelog] = useState(false);
 
     // Force cleanup of any potential scroll locks
@@ -36,6 +37,7 @@ export function ClientWrapper({ username, isOwner, totalValueEUR, assets, navbar
                 assets={assets}
                 isBlurred={false}
                 showChangelog={showChangelog}
+                exchangeRates={exchangeRates}
             />
 
             <div style={{

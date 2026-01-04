@@ -6,6 +6,8 @@ import { ClientWrapper } from "@/components/ClientWrapper";
 import { getPortfolioMetrics } from "@/lib/portfolio";
 import { prisma } from "@/lib/prisma";
 
+import { getExchangeRates } from "@/lib/exchangeRates";
+
 export const dynamic = 'force-dynamic';
 
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
@@ -27,14 +29,19 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
     const isOwner = session?.user?.email === user.email;
 
-    // Process Assets using shared logic
-    const { totalValueEUR: totalPortfolioValueEUR, assetsWithValues } = await getPortfolioMetrics(user.portfolio.assets);
+    // Fetch dynamic rates
+    const rates = await getExchangeRates();
+
+    // Process Assets using shared logic with dynamic rates
+    const { totalValueEUR: totalPortfolioValueEUR, assetsWithValues } = await getPortfolioMetrics(user.portfolio.assets, rates);
+
     return (
         <ClientWrapper
             username={username}
             isOwner={isOwner}
             totalValueEUR={totalPortfolioValueEUR}
             assets={assetsWithValues}
+            exchangeRates={rates}
             navbar={
                 <Navbar
                     totalBalance={totalPortfolioValueEUR}

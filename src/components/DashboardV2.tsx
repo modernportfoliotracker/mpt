@@ -42,7 +42,8 @@ interface DashboardProps {
     totalValueEUR: number;
     assets: AssetDisplay[];
     isBlurred: boolean;
-    showChangelog?: boolean; // New prop
+    showChangelog?: boolean;
+    exchangeRates?: Record<string, number>;
 }
 
 // European number format removed (Imported)
@@ -217,6 +218,7 @@ function AssetTableRow({
     timePeriod,
     rowIndex,
     columns = ['NAME', 'PRICE', 'VALUE', 'PL'],
+    exchangeRates
 }: {
     asset: AssetDisplay,
     positionsViewCurrency: string,
@@ -226,7 +228,8 @@ function AssetTableRow({
     timeFactor: number,
     rowIndex?: number,
     columns?: ColumnId[],
-    timePeriod: string
+    timePeriod: string,
+    exchangeRates?: Record<string, number>
 }) {
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
@@ -249,7 +252,7 @@ function AssetTableRow({
     // Global (Converted) Values for PRICE_EUR / VALUE_EUR / PL columns
     // If View is ORG -> Global is EUR. If View is Specific (USD/TRY) -> Global is that specific currency.
     const globalCurrency = positionsViewCurrency === 'ORG' ? 'EUR' : positionsViewCurrency;
-    const globalRate = getRate(asset.currency, globalCurrency);
+    const globalRate = getRate(asset.currency, globalCurrency, exchangeRates);
     const globalSymbol = getCurrencySymbol(globalCurrency);
 
     const globalPrice = asset.currentPrice * globalRate;
@@ -271,7 +274,7 @@ function AssetTableRow({
 
         // Convert dailyChange (EUR) to Global Display Currency
         // We know dailyChange is EUR, so we need EUR -> Global Rate
-        const eurToGlobalRate = getRate('EUR', globalCurrency);
+        const eurToGlobalRate = getRate('EUR', globalCurrency, exchangeRates);
         periodProfitVal = (asset.dailyChange || 0) * eurToGlobalRate;
     }
 
@@ -643,7 +646,7 @@ function AssetTableRow({
 }
 
 // Reusable Asset Card Component
-function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlurred, isOwner, onDelete, timeFactor, timePeriod, rank }: {
+function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlurred, isOwner, onDelete, timeFactor, timePeriod, rank, exchangeRates }: {
     asset: AssetDisplay,
     positionsViewCurrency: string,
     totalPortfolioValueEUR: number,
@@ -652,7 +655,8 @@ function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlu
     onDelete: (id: string) => void,
     timeFactor: number,
     timePeriod: string,
-    rank?: number
+    rank?: number,
+    exchangeRates?: Record<string, number>
 }) {
     const router = useRouter(); // Initialize router
 
@@ -666,8 +670,6 @@ function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlu
 
     // Currency Conversion Logic
     // Base is EUR (asset.totalValueEUR) or Native (for Original)
-    // Rates (approximate to match List View)
-    const RATES: Record<string, number> = { EUR: 1, USD: 1.09, TRY: 37.5 };
 
     let displayCurrency = positionsViewCurrency === 'ORG' ? asset.currency : positionsViewCurrency;
     const currencySymbol = getCurrencySymbol(displayCurrency);
@@ -684,7 +686,7 @@ function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlu
         unitPrice = asset.currentPrice;
         unitCost = asset.buyPrice;
     } else {
-        const targetRate = getRate('EUR', displayCurrency);
+        const targetRate = getRate('EUR', displayCurrency, exchangeRates);
         totalVal = asset.totalValueEUR * targetRate;
         const costEUR = asset.totalValueEUR / (1 + asset.plPercentage / 100);
         totalCost = costEUR * targetRate;
@@ -705,7 +707,7 @@ function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlu
 
     if (timePeriod === '1D') {
         periodProfitPctVal = asset.dailyChangePercentage || 0;
-        const conversionRate = getRate('EUR', displayCurrency);
+        const conversionRate = getRate('EUR', displayCurrency, exchangeRates);
         periodProfitVal = (asset.dailyChange || 0) * conversionRate;
     }
 
@@ -1197,7 +1199,8 @@ function AssetGroup({
     timeFactor,
     dragHandleProps,
     columns,
-    timePeriod
+    timePeriod,
+    exchangeRates
 }: {
     type: string,
     assets: AssetDisplay[],
@@ -1209,14 +1212,14 @@ function AssetGroup({
     timeFactor: number,
     dragHandleProps?: any,
     columns?: ColumnId[],
-    timePeriod: string
+    timePeriod: string,
+    exchangeRates?: Record<string, number>
 }) {
     const [isExpanded, setIsExpanded] = useState(false); // Default: Collapsed
 
-    const RATES: Record<string, number> = { EUR: 1, USD: 1.09, TRY: 37.5 };
-    const rate = positionsViewCurrency === 'ORIGINAL' ? 1 : (RATES[positionsViewCurrency] || 1);
+    const rate = positionsViewCurrency === 'ORIGINAL' ? 1 : (exchangeRates?.[positionsViewCurrency] || 1);
     const displayCurrency = positionsViewCurrency === 'ORIGINAL' ? 'EUR' : positionsViewCurrency;
-    const currencySymbol = displayCurrency === 'EUR' ? '€' : displayCurrency === 'USD' ? '$' : displayCurrency === 'TRY' ? '₺' : '€';
+    const currencySymbol = getCurrencySymbol(displayCurrency);
 
     const fmt = (val: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
 
@@ -1283,7 +1286,8 @@ function AssetGroupGrid({
     onDelete,
     timeFactor,
     dragHandleProps,
-    timePeriod
+    timePeriod,
+    exchangeRates
 }: {
     type: string,
     assets: AssetDisplay[],
@@ -1297,14 +1301,14 @@ function AssetGroupGrid({
     onDelete: (id: string) => void,
     timeFactor: number,
     dragHandleProps?: any,
-    timePeriod: string
+    timePeriod: string,
+    exchangeRates?: Record<string, number>
 }) {
     const [isExpanded, setIsExpanded] = useState(false); // Default: Collapsed
 
-    const RATES: Record<string, number> = { EUR: 1, USD: 1.09, TRY: 37.5 };
-    const rate = (positionsViewCurrency as string) === 'ORIGINAL' ? 1 : (RATES[positionsViewCurrency] || 1);
+    const rate = (positionsViewCurrency as string) === 'ORIGINAL' ? 1 : (exchangeRates?.[positionsViewCurrency] || 1);
     const displayCurrency = (positionsViewCurrency as string) === 'ORIGINAL' ? 'EUR' : positionsViewCurrency;
-    const currencySymbol = displayCurrency === 'EUR' ? '€' : displayCurrency === 'USD' ? '$' : displayCurrency === 'TRY' ? '₺' : '€';
+    const currencySymbol = getCurrencySymbol(displayCurrency);
     const fmt = (val: number) => new Intl.NumberFormat('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val);
 
     return (
@@ -1375,7 +1379,7 @@ function AssetGroupGrid({
 
 
 
-export default function Dashboard({ username, isOwner, totalValueEUR, assets, isBlurred, showChangelog = false }: DashboardProps) {
+export default function Dashboard({ username, isOwner, totalValueEUR, assets, isBlurred, showChangelog = false, exchangeRates }: DashboardProps) {
     const router = useRouter();
     // Initialize items with default sort (Weight Descending)
     // Initialize items with default sort (Rank then Value)
@@ -2173,6 +2177,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                     timeFactor={getTimeFactor()}
                                                                     columns={activeColumns}
                                                                     timePeriod={timePeriod}
+                                                                    exchangeRates={exchangeRates}
                                                                 />
                                                             </SortableGroup>
                                                         ))}
@@ -2227,6 +2232,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                         onDelete={handleDelete}
                                                                         timeFactor={getTimeFactor()}
                                                                         timePeriod={timePeriod}
+                                                                        exchangeRates={exchangeRates}
                                                                     />
                                                                 </SortableGroup>
                                                             );

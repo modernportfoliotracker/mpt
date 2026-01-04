@@ -219,6 +219,6 @@ export async function getMarketPrice(symbol: string, type: string, exchange?: st
 
 import { convertCurrency as sharedConvert } from '@/lib/currency';
 
-export async function convertCurrency(amount: number, from: string, to: string): Promise<number> {
-    return sharedConvert(amount, from, to);
+export async function convertCurrency(amount: number, from: string, to: string, customRates?: Record<string, number>): Promise<number> {
+    return sharedConvert(amount, from, to, customRates);
 }
