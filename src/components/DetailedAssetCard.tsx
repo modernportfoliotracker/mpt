@@ -7,7 +7,7 @@ import { Settings, Save, X, Trash2 } from "lucide-react";
 import { ASSET_COLORS } from "@/lib/constants";
 import { getLogoUrl } from "@/lib/logos";
 import { AssetDisplay } from "@/lib/types";
-import { RATES } from "@/lib/currency";
+import { RATES, getRate } from "@/lib/currency";
 
 import { getCompanyName } from "@/lib/companyNames";
 import { formatEUR } from "@/lib/formatters";
@@ -48,6 +48,7 @@ interface DetailedAssetCardProps {
     onDelete: (id: string) => void;
     timeFactor: number;
     timePeriod: string;
+    exchangeRates?: Record<string, number>;
 }
 
 export function DetailedAssetCard({
@@ -58,7 +59,8 @@ export function DetailedAssetCard({
     isOwner,
     onDelete,
     timeFactor,
-    timePeriod
+    timePeriod,
+    exchangeRates
 }: DetailedAssetCardProps) {
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
@@ -83,7 +85,7 @@ export function DetailedAssetCard({
         unitPrice = asset.currentPrice;
         unitCost = asset.buyPrice;
     } else {
-        const targetRate = RATES[positionsViewCurrency] || 1;
+        const targetRate = getRate('EUR', displayCurrency, exchangeRates);
         totalVal = asset.totalValueEUR * targetRate;
         const costEUR = asset.totalValueEUR / (1 + asset.plPercentage / 100);
         totalCost = costEUR * targetRate;
@@ -99,7 +101,7 @@ export function DetailedAssetCard({
 
     if (timePeriod === '1D') {
         periodProfitPctVal = asset.dailyChangePercentage || 0;
-        const conversionRate = displayCurrency === 'EUR' ? 1 : (RATES[displayCurrency] || 1);
+        const conversionRate = getRate('EUR', displayCurrency, exchangeRates);
         periodProfitVal = (asset.dailyChange || 0) * conversionRate;
     }
 

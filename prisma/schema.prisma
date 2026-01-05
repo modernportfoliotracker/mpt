@@ -45,9 +45,15 @@ model Asset {
   isin        String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  customGroup String?
-  rank        Int?      @default(0)
-  portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
+  customGroup   String?
+  rank          Int?      @default(0)
+  location      String?   // NL, TR
+  ownerCode     String?   // EAK, TAK, AAK
+  assetClass    String?   // Cash, Equity, Crypto...
+  assetSubClass String?   // Equity, Bond...
+  market        String?   // NASDAQ, BIST... 
+  nextEarningsDate DateTime? // Manually or automatically set next earnings date
+  portfolio     Portfolio @relation(fields: [portfolioId], references: [id])
 }
 
 

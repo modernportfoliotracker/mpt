@@ -25,6 +25,9 @@ export interface FinnhubProfile {
     exchange: string;
     name: string;
     ticker: string;
+    finnhubIndustry?: string;  // Finnhub's industry classification
+    sector?: string;            // Company sector (e.g., "Technology")
+    industry?: string;          // Company industry
 }
 
 /**
@@ -76,7 +79,9 @@ export async function getQuote(symbol: string): Promise<FinnhubQuote | null> {
         );
 
         if (!response.ok) {
-            console.error('Finnhub quote error:', response.status);
+            if (response.status !== 403) {
+                console.warn('Finnhub quote error:', response.status);
+            }
             return null;
         }
 
@@ -107,7 +112,10 @@ export async function getCompanyProfile(symbol: string): Promise<FinnhubProfile 
         );
 
         if (!response.ok) {
-            console.error('Finnhub profile error:', response.status);
+            // 403 is expected - profile2 is premium tier only
+            if (response.status !== 403) {
+                console.warn('Finnhub profile error:', response.status);
+            }
             return null;
         }
 

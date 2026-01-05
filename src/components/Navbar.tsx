@@ -22,7 +22,7 @@ export async function Navbar({ totalBalance, username, isOwner, showPortfolioBut
             top: 0,
             left: 0,
             right: 0,
-            zIndex: 50,
+            zIndex: 9998,
             borderRadius: '0',
             border: 'none',
             borderBottom: '1px solid var(--glass-border)',

@@ -84,10 +84,18 @@ export async function getPortfolioMetrics(assets: any[], customRates?: Record<st
             platform: asset.platform || undefined,
             customGroup: asset.customGroup || undefined,
             rank: asset.rank || 0, // Pass rank
+            location: asset.location || undefined,
+            ownerCode: asset.ownerCode || undefined,
+            assetClass: asset.assetClass || undefined,
+            assetSubClass: asset.assetSubClass || undefined,
+            market: asset.market || undefined,
         };
     }));
 
-    const totalPortfolioValueEUR = assetsWithValues.reduce((sum: number, asset) => sum + asset.totalValueEUR, 0);
+    const totalPortfolioValueEUR = assetsWithValues.reduce((sum: number, asset) => {
+        console.log(`[MetricDebug] ${asset.symbol}: ${asset.totalValueEUR} EUR (Cum: ${sum + asset.totalValueEUR})`);
+        return sum + asset.totalValueEUR;
+    }, 0);
 
     const sorted = assetsWithValues.sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
     console.log("[Portfolio] Server returning assets with ranks:", sorted.map(a => `${a.symbol}:${a.rank}`));

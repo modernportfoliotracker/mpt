@@ -194,10 +194,18 @@ const UpdateAssetSchema = z.object({
     buyPrice: z.coerce.number().nonnegative(),
     name: z.string().optional(),
     symbol: z.string().toUpperCase().optional(),
+    type: z.enum(["STOCK", "CRYPTO", "GOLD", "BOND", "FUND", "CASH", "COMMODITY"]).optional(),
+    currency: z.enum(["USD", "EUR", "TRY"]).optional(),
+    exchange: z.string().optional(),
+    sector: z.string().optional(),
+    country: z.string().optional(),
+    platform: z.string().optional(),
+    isin: z.string().optional(),
     customGroup: z.string().optional(),
+    nextEarningsDate: z.coerce.date().optional().nullable(),
 });
 
-export async function updateAsset(assetId: string, data: { quantity: number; buyPrice: number; name?: string; symbol?: string; customGroup?: string }) {
+export async function updateAsset(assetId: string, data: { quantity: number; buyPrice: number; name?: string; symbol?: string; type?: "STOCK" | "CRYPTO" | "GOLD" | "BOND" | "FUND" | "CASH" | "COMMODITY"; currency?: "USD" | "EUR" | "TRY"; exchange?: string; sector?: string; country?: string; platform?: string; isin?: string; customGroup?: string; nextEarningsDate?: Date | null }) {
     const session = await auth();
     if (!session?.user?.email) return { error: "Not authenticated" };
 
@@ -224,7 +232,15 @@ export async function updateAsset(assetId: string, data: { quantity: number; buy
                 buyPrice: validated.data.buyPrice,
                 ...(validated.data.name && { name: validated.data.name }),
                 ...(validated.data.symbol && { symbol: validated.data.symbol }),
+                ...(validated.data.type && { type: validated.data.type }),
+                ...(validated.data.currency && { currency: validated.data.currency }),
+                ...(validated.data.exchange !== undefined && { exchange: validated.data.exchange || null }),
+                ...(validated.data.sector !== undefined && { sector: validated.data.sector || null }),
+                ...(validated.data.country !== undefined && { country: validated.data.country || null }),
+                ...(validated.data.platform !== undefined && { platform: validated.data.platform || null }),
+                ...(validated.data.isin !== undefined && { isin: validated.data.isin || null }),
                 ...(validated.data.customGroup !== undefined && { customGroup: validated.data.customGroup }),
+                ...(validated.data.nextEarningsDate !== undefined && { nextEarningsDate: validated.data.nextEarningsDate }),
             }
         });
 

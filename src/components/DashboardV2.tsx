@@ -29,12 +29,13 @@ import { CSS } from '@dnd-kit/utilities';
 import { ASSET_COLORS } from "@/lib/constants";
 import { getLogoUrl } from "@/lib/logos";
 const TIME_PERIODS = ["1D", "1W", "1M", "YTD", "1Y", "ALL"];
-import { Bitcoin, Wallet, TrendingUp, PieChart, Gem, Coins, Layers, LayoutGrid, List, Save, X, Trash2, Settings, LayoutTemplate, Grid, Check, ChevronDown, ChevronRight, GripVertical, SlidersHorizontal, Briefcase } from "lucide-react";
+import { Bitcoin, Wallet, TrendingUp, PieChart, Gem, Coins, Layers, LayoutGrid, List, Save, X, Trash2, Settings, LayoutTemplate, Grid, Check, ChevronDown, ChevronRight, GripVertical, SlidersHorizontal, Briefcase, Banknote } from "lucide-react";
 import { DetailedAssetCard } from "./DetailedAssetCard";
 import { getCompanyName } from "@/lib/companyNames";
 import { formatEUR, formatNumber } from "@/lib/formatters";
 import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { RATES, getRate, getCurrencySymbol } from "@/lib/currency";
+import { EditAssetModal } from "./EditAssetModal";
 
 interface DashboardProps {
     username: string;
@@ -70,7 +71,8 @@ const AssetLogo = ({ symbol, logoUrl, size = '3.5rem' }: { symbol: string, logoU
         flexShrink: 0 // Prevent shrinking in flex containers
     };
 
-    if (logoUrl && !error) {
+    // Only show image if logoUrl is a valid non-empty string
+    if (logoUrl && logoUrl.trim() !== '' && !error) {
         return (
             <div style={logoStyle}>
                 <img
@@ -83,6 +85,24 @@ const AssetLogo = ({ symbol, logoUrl, size = '3.5rem' }: { symbol: string, logoU
         )
     }
 
+    // Extract first meaningful letter for placeholder
+    // Remove common prefixes like "BES-" to get the actual asset name
+    const getPlaceholderLetter = (sym: string): string => {
+        let cleanSymbol = sym;
+
+        // Remove common prefixes
+        const prefixes = ['BES-', 'BES_'];
+        for (const prefix of prefixes) {
+            if (cleanSymbol.startsWith(prefix)) {
+                cleanSymbol = cleanSymbol.substring(prefix.length);
+                break;
+            }
+        }
+
+        // Return first letter, uppercase
+        return cleanSymbol.charAt(0).toUpperCase();
+    };
+
     return (
         <div style={{
             ...logoStyle,
@@ -90,12 +110,13 @@ const AssetLogo = ({ symbol, logoUrl, size = '3.5rem' }: { symbol: string, logoU
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: size === '2rem' ? '0.8rem' : '1.2rem',
+            fontSize: size === '1.2rem' ? '0.55rem' : size === '1.4rem' ? '0.65rem' : size === '2rem' ? '0.9rem' : '1.2rem',
             fontWeight: 800,
-            color: 'var(--text-primary)',
+            color: '#fff',
+            textTransform: 'uppercase',
             textShadow: '0 2px 4px rgba(0,0,0,0.3)'
         }}>
-            {symbol.charAt(0)}
+            {getPlaceholderLetter(symbol)}
         </div>
     );
 }
@@ -104,7 +125,7 @@ import { AssetDisplay } from "@/lib/types";
 import { SortableAssetRow, SortableGroup, SortableAssetCard } from "./SortableWrappers";
 
 // Column Configurations
-type ColumnId = 'TYPE' | 'NAME' | 'TICKER' | 'EXCHANGE' | 'CURRENCY' | 'PRICE' | 'PRICE_EUR' | 'VALUE' | 'VALUE_EUR' | 'PL' | 'EARNINGS' | 'PORTFOLIO_NAME';
+type ColumnId = 'TYPE' | 'NAME' | 'TICKER' | 'EXCHANGE' | 'CURRENCY' | 'PRICE' | 'PRICE_EUR' | 'VALUE' | 'VALUE_EUR' | 'PL' | 'EARNINGS' | 'PORTFOLIO_NAME' | 'OWNER' | 'LOCATION' | 'PLATFORM' | 'ASSET_CLASS' | 'MARKET' | 'COUNTRY';
 
 interface ColumnConfig {
     id: ColumnId;
@@ -113,35 +134,40 @@ interface ColumnConfig {
     isDefault: boolean;
 }
 
+// Simplified Columns as requested
 const ALL_COLUMNS: ColumnConfig[] = [
     { id: 'PORTFOLIO_NAME', label: 'Portfolio', isDefault: true },
     { id: 'NAME', label: 'Name', isDefault: true },
     { id: 'PRICE', label: 'Price', isDefault: true },
     { id: 'VALUE', label: 'Value', isDefault: true },
-    { id: 'PRICE_EUR', label: 'Price (€)', isDefault: true },
-    { id: 'VALUE_EUR', label: 'Value (€)', isDefault: true },
-    { id: 'PL', label: 'P&L', isDefault: true },
-    { id: 'TYPE', label: 'Type', isDefault: false },
-    { id: 'TICKER', label: 'Ticker', isDefault: false },
-    { id: 'EXCHANGE', label: 'Exchange', isDefault: false },
-    { id: 'CURRENCY', label: 'Currency', isDefault: false },
-    { id: 'EARNINGS', label: 'Next Earnings Date (NED)', headerLabel: 'NED', isDefault: false },
+    { id: 'PRICE_EUR', label: 'Price (€)', isDefault: false },
+    { id: 'VALUE_EUR', label: 'Value (€)', isDefault: false },
+    { id: 'PL', label: 'P&L (€)', isDefault: true },
 ];
 
 const COL_WIDTHS: Record<ColumnId, string> = {
-    TYPE: 'minmax(40px, 0.5fr)',
+    PORTFOLIO_NAME: 'minmax(80px, 0.8fr)',
     NAME: 'minmax(120px, 2fr)',
-    TICKER: 'minmax(50px, 0.6fr)',
-    EXCHANGE: 'minmax(60px, 0.7fr)',
-    CURRENCY: 'minmax(40px, 0.5fr)',
-    PRICE: 'minmax(80px, 1fr)',
-    PRICE_EUR: 'minmax(80px, 1fr)',
-    VALUE: 'minmax(90px, 1.1fr)',
-    VALUE_EUR: 'minmax(90px, 1.1fr)',
-    PL: 'minmax(80px, 1fr)',
-    EARNINGS: 'minmax(50px, 0.6fr)',
-    PORTFOLIO_NAME: 'minmax(70px, 0.8fr)'
+    PRICE: 'minmax(70px, 0.9fr)',
+    VALUE: 'minmax(80px, 1fr)',
+    PRICE_EUR: 'minmax(70px, 0.9fr)',
+    VALUE_EUR: 'minmax(80px, 1fr)',
+    PL: 'minmax(70px, 0.9fr)',
+    // Keep others for safe fallback if needed, or remove if unused in render
+    LOCATION: '0px',
+    OWNER: '0px',
+    PLATFORM: '0px',
+    COUNTRY: '0px',
+    ASSET_CLASS: '0px',
+    TYPE: '0px',
+    MARKET: '0px',
+    CURRENCY: '0px',
+    TICKER: '0px',
+    EXCHANGE: '0px',
+    EARNINGS: '0px'
 };
+
+// Global Edit/Click Handler Context or Props could be processed here, but we pass them down.
 
 const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: string, children: React.ReactNode, onToggle?: () => void, columnsCount?: number }) => {
     const {
@@ -183,6 +209,7 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
                 gap: 0,
                 height: '100%',
                 paddingLeft: isUltraHighDensity ? '0.05rem' : '0.2rem',
+                paddingRight: ['col:PRICE', 'col:PRICE_EUR', 'col:VALUE', 'col:VALUE_EUR', 'col:PL'].includes(id) ? (isUltraHighDensity ? '0.1rem' : isHighDensity ? '0.2rem' : '0.4rem') : '0',
                 borderRight: 'none',
                 borderBottom: 'none',
                 background: isDragging ? 'rgba(0,0,0,0.05)' : 'transparent',
@@ -190,12 +217,15 @@ const DraggableHeader = ({ id, children, onToggle, columnsCount = 4 }: { id: str
             }}>
                 {columnsCount < 12 && <span style={{ opacity: 0.1, cursor: 'grab' }}><GripVertical size={9} /></span>}
                 <div style={{
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    flex: 1,
                     overflow: 'hidden',
                     lineHeight: 1.1,
-                    fontSize: isUltraHighDensity ? '0.55rem' : isHighDensity ? '0.62rem' : '0.7rem'
+                    fontSize: isUltraHighDensity ? '0.55rem' : isHighDensity ? '0.62rem' : '0.7rem',
+                    textAlign: ['col:PRICE', 'col:PRICE_EUR', 'col:VALUE', 'col:VALUE_EUR', 'col:PL'].includes(id) ? 'right' : 'left',
+                    alignItems: ['col:PRICE', 'col:PRICE_EUR', 'col:VALUE', 'col:VALUE_EUR', 'col:PL'].includes(id) ? 'flex-end' : 'flex-start'
                 }}>
                     {children}
                 </div>
@@ -218,7 +248,9 @@ function AssetTableRow({
     timePeriod,
     rowIndex,
     columns = ['NAME', 'PRICE', 'VALUE', 'PL'],
-    exchangeRates
+    exchangeRates,
+    isGlobalEditMode,
+    onAssetClick
 }: {
     asset: AssetDisplay,
     positionsViewCurrency: string,
@@ -229,17 +261,11 @@ function AssetTableRow({
     rowIndex?: number,
     columns?: ColumnId[],
     timePeriod: string,
-    exchangeRates?: Record<string, number>
+    exchangeRates?: Record<string, number>,
+    isGlobalEditMode?: boolean,
+    onAssetClick?: (asset: AssetDisplay) => void
 }) {
     const router = useRouter();
-    const [isEditing, setIsEditing] = useState(false);
-    const [editQty, setEditQty] = useState(asset.quantity);
-    const [editCost, setEditCost] = useState(asset.buyPrice);
-    const [editName, setEditName] = useState(asset.name || "");
-    const [editSymbol, setEditSymbol] = useState(asset.symbol);
-    const [editCustomGroup, setEditCustomGroup] = useState(asset.customGroup || ""); // New
-    const [isSaving, setIsSaving] = useState(false);
-    const [justUpdated, setJustUpdated] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
 
     // Calculate Conversion Rate
@@ -281,31 +307,8 @@ function AssetTableRow({
     const isPeriodProfit = periodProfitVal >= 0;
 
     const fmt = (val: number, min = 2, max = 2) =>
-        new Intl.NumberFormat('en-US', { minimumFractionDigits: min, maximumFractionDigits: max }).format(val || 0);
+        new Intl.NumberFormat('de-DE', { minimumFractionDigits: min, maximumFractionDigits: max }).format(val || 0);
 
-    const handleSave = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (isSaving) return;
-        setIsSaving(true);
-        const res = await updateAsset(asset.id, {
-            quantity: Number(editQty),
-            buyPrice: Number(editCost),
-            name: editName,
-            symbol: editSymbol,
-            customGroup: editCustomGroup // New
-        });
-
-        if (res.error) {
-            alert(res.error);
-            setIsSaving(false);
-        } else {
-            setIsEditing(false);
-            setJustUpdated(true);
-            router.refresh();
-            setTimeout(() => setJustUpdated(false), 2000);
-            setIsSaving(false);
-        }
-    };
 
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -355,78 +358,40 @@ function AssetTableRow({
                 cellContent = (
                     <div className="col-name" style={{ display: 'flex', alignItems: 'center', gap: isHighDensity ? '0.3rem' : '0.8rem', minWidth: 0, width: '100%' }}>
                         <AssetLogo symbol={asset.symbol} logoUrl={logoUrl} size={isUltraHighDensity ? "1.2rem" : isHighDensity ? "1.4rem" : "2rem"} />
-                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: isEditing ? '2px' : '0', flex: 1 }}>
-                            {isEditing ? (
-                                <>
-                                    <input
-                                        type="text"
-                                        value={editName}
-                                        onChange={(e) => setEditName(e.target.value)}
-                                        onClick={(e) => e.stopPropagation()}
-                                        placeholder="Name"
-                                        style={{
-                                            background: 'var(--glass-shine)',
-                                            border: '1px solid var(--glass-border)',
-                                            borderRadius: '3px',
-                                            color: 'var(--text-primary)',
-                                            fontSize: '0.65rem',
-                                            padding: '1px 2px',
-                                            width: '100%',
-                                        }}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={editSymbol}
-                                        onChange={(e) => setEditSymbol(e.target.value.toUpperCase())}
-                                        onClick={(e) => e.stopPropagation()}
-                                        placeholder="Ticker"
-                                        style={{
-                                            background: 'var(--glass-shine)',
-                                            border: '1px solid var(--glass-border)',
-                                            borderRadius: '3px',
-                                            color: 'var(--text-primary)',
-                                            fontSize: '0.6rem',
-                                            padding: '1px 2px',
-                                            width: '100%',
-                                            textTransform: 'uppercase'
-                                        }}
-                                    />
-                                </>
-                            ) : (
-                                <>
-                                    <span style={{
-                                        fontSize: fontSizeMain,
-                                        fontWeight: 600,
-                                        color: 'var(--text-primary)',
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        lineHeight: 1.1
-                                    }}>
-                                        {companyName}
+                        <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: '0', flex: 1 }}>
+                            <>
+                                <span style={{
+                                    fontSize: fontSizeMain,
+                                    fontWeight: 600,
+                                    color: 'var(--text-primary)',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    lineHeight: 1.1
+                                }}>
+                                    {companyName}
+                                </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', overflow: 'hidden' }}>
+                                    <span style={{ fontSize: fontSizeSub, opacity: 0.4, fontWeight: 500, whiteSpace: 'nowrap' }}>
+                                        {asset.symbol}
                                     </span>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '3px', overflow: 'hidden' }}>
-                                        <span style={{ fontSize: fontSizeSub, opacity: 0.4, fontWeight: 500, whiteSpace: 'nowrap' }}>
-                                            {asset.symbol}
+                                    {!isUltraHighDensity && (
+                                        <span style={{
+                                            fontSize: '0.65rem',
+                                            opacity: 0.8,
+                                            fontWeight: 600,
+                                            color: 'var(--accent)',
+                                            background: 'rgba(99, 102, 241, 0.1)',
+                                            padding: '0 3px',
+                                            borderRadius: '3px'
+                                        }}>
+                                            x{asset.quantity >= 1000
+                                                ? (asset.quantity / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
+                                                : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 0 })}
                                         </span>
-                                        {!isUltraHighDensity && (
-                                            <span style={{
-                                                fontSize: '0.65rem',
-                                                opacity: 0.8,
-                                                fontWeight: 600,
-                                                color: 'var(--accent)',
-                                                background: 'rgba(99, 102, 241, 0.1)',
-                                                padding: '0 3px',
-                                                borderRadius: '3px'
-                                            }}>
-                                                x{asset.quantity >= 1000
-                                                    ? (asset.quantity / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
-                                                    : asset.quantity.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                                            </span>
-                                        )}
-                                    </div>
-                                </>
-                            )}
+                                    )}
+                                </div>
+                            </>
                         </div>
                     </div>
                 );
@@ -444,25 +409,7 @@ function AssetTableRow({
                 cellContent = (
                     <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', width: '100%' }}>
                         <span style={{ fontSize: fontSizeMain, fontWeight: 500, opacity: 0.9 }}>{nativeSymbol}{fmt(nativePrice)}</span>
-                        {!isEditing && <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{nativeSymbol}{fmt(asset.buyPrice)}</span>}
-                        {isEditing && (
-                            <input
-                                type="number"
-                                value={editCost}
-                                onChange={(e) => setEditCost(Number(e.target.value))}
-                                onClick={(e) => e.stopPropagation()}
-                                style={{
-                                    width: '100%',
-                                    background: 'var(--glass-shine)',
-                                    border: '1px solid var(--glass-border)',
-                                    borderRadius: '3px',
-                                    color: 'var(--text-primary)',
-                                    fontSize: '0.6rem',
-                                    padding: '1px 2px',
-                                    textAlign: 'right'
-                                }}
-                            />
-                        )}
+                        <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{nativeSymbol}{fmt(asset.buyPrice)}</span>
                     </div>
                 );
                 break;
@@ -487,7 +434,7 @@ function AssetTableRow({
                     cellContent = (
                         <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', width: '100%' }}>
                             <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: 'var(--text-primary)' }}>{globalSymbol}{fmt(globalTotalValue, 0, 0)}</span>
-                            {!isHighDensity && <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{globalSymbol}{fmt(globalCostBasis, 0, 0)}</span>}
+                            <span style={{ fontSize: '0.65rem', opacity: 0.5 }}>{globalSymbol}{fmt(globalCostBasis, 0, 0)}</span>
                         </div>
                     );
                 }
@@ -495,32 +442,18 @@ function AssetTableRow({
             case 'PL':
                 cellContent = (
                     <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', width: '100%', position: 'relative' }}>
-                        {isEditing ? (
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '2px' }}>
-                                <button onClick={handleSave} disabled={isSaving} style={{ background: '#10b981', border: 'none', color: '#000', cursor: 'pointer', padding: '1px', borderRadius: '3px' }}>
-                                    {isSaving ? ".." : <Check size={10} />}
-                                </button>
-                                <button onClick={(e) => { e.stopPropagation(); setIsEditing(false); }} style={{ background: 'rgba(255, 255, 255, 0.1)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', cursor: 'pointer', padding: '1px', borderRadius: '3px' }}>
-                                    <X size={10} />
-                                </button>
-                                <button onClick={handleDelete} style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', cursor: 'pointer', padding: '1px', borderRadius: '3px' }}>
-                                    <Trash2 size={10} />
-                                </button>
-                            </div>
-                        ) : (
-                            <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'flex-end'
-                            }}>
-                                <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
-                                    {isPeriodProfit ? '▲' : '▼'}{fmt(periodProfitPct)}%
-                                </span>
-                                <span style={{ fontSize: '0.6rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
-                                    {isPeriodProfit ? '+' : ''}{globalSymbol}{fmt(periodProfitVal, 0, 0)}
-                                </span>
-                            </div>
-                        )}
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-end'
+                        }}>
+                            <span style={{ fontSize: fontSizeMain, fontWeight: 700, color: isPeriodProfit ? '#10b981' : '#ef4444' }}>
+                                {isPeriodProfit ? '▲' : '▼'}{Math.round(Math.abs(periodProfitPct))}%
+                            </span>
+                            <span style={{ fontSize: '0.6rem', fontWeight: 600, color: isPeriodProfit ? '#10b981' : '#ef4444', opacity: 0.8 }}>
+                                {isPeriodProfit ? '+' : ''}{globalSymbol}{fmt(periodProfitVal, 0, 0)}
+                            </span>
+                        </div>
                     </div>
                 );
                 break;
@@ -541,7 +474,7 @@ function AssetTableRow({
                         textOverflow: 'ellipsis',
                         fontWeight: 600
                     }}>
-                        {asset.customGroup || '-'}
+                        {asset.customGroup || asset.ownerCode || '-'}
                     </span>
                 );
                 break;
@@ -562,22 +495,22 @@ function AssetTableRow({
             className="asset-table-grid row-container"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
+            onClick={() => isGlobalEditMode && onAssetClick?.(asset)} // Handle click in global edit mode
             style={{
                 display: 'grid',
                 gridTemplateColumns: gridTemplate,
                 minHeight: isUltraHighDensity ? '1.6rem' : isHighDensity ? '1.9rem' : '3rem',
                 borderBottom: 'none',
                 position: 'relative',
-                background: justUpdated
-                    ? 'rgba(16, 185, 129, 0.1)'
-                    : isEditing
-                        ? 'rgba(245, 158, 11, 0.05)'
-                        : isHovered
-                            ? 'rgba(0,0,0,0.02)'
-                            : (rowIndex !== undefined && rowIndex % 2 === 1)
-                                ? 'rgba(0,0,0,0.01)'
-                                : 'transparent',
-                overflow: 'hidden'
+                background: isHovered
+                    ? 'rgba(0,0,0,0.02)'
+                    : (rowIndex !== undefined && rowIndex % 2 === 1)
+                        ? 'rgba(0,0,0,0.01)'
+                        : 'transparent',
+                overflow: 'hidden',
+                cursor: isGlobalEditMode ? 'pointer' : 'default', // Cursor change
+                opacity: isGlobalEditMode && isHovered ? 0.7 : 1, // Opacity feedback
+                transition: 'all 0.2s'
             }}
         >
             {columns.map(colId => {
@@ -587,66 +520,27 @@ function AssetTableRow({
                         ...commonCellStyles,
                         justifyContent: isNumeric ? 'flex-end' : 'flex-start',
                     }}>
-                        {/* Shifting Content Wrapper */}
+                        {/* Shifting Content Wrapper - Removed Shift Logic for Edit Button */}
                         <div style={{
                             width: '100%',
                             height: '100%',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: isNumeric ? 'flex-end' : 'flex-start',
-                            transform: isHovered && isOwner && !isEditing ? 'translateX(-35px)' : 'none',
-                            transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                             flexShrink: 0
                         }}>
+                            {/* Extract content from renderCell if it returns a wrapper, or use directly if it returns content */}
                             {renderCell(colId)}
                         </div>
                     </div>
                 );
             })}
-
-            {isOwner && !isEditing && (
-                <div className="edit-trigger" style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    opacity: isHovered ? 1 : 0,
-                    transition: 'all 0.3s ease',
-                    zIndex: 20
-                }}>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setIsEditing(true);
-                            setEditName(asset.name || "");
-                            setEditSymbol(asset.symbol);
-                            setEditCustomGroup(asset.customGroup || "");
-                            setEditQty(asset.quantity);
-                            setEditCost(asset.buyPrice);
-                        }}
-                        style={{
-                            background: '#6366f1',
-                            border: 'none',
-                            color: '#fff',
-                            cursor: 'pointer',
-                            padding: isUltraHighDensity ? '3px' : '4px',
-                            borderRadius: '0.4rem',
-                            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.5)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}
-                    >
-                        <Settings size={isUltraHighDensity ? 12 : 14} />
-                    </button>
-                </div>
-            )}
         </div>
     );
 }
 
 // Reusable Asset Card Component
-function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlurred, isOwner, onDelete, timeFactor, timePeriod, rank, exchangeRates }: {
+function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlurred, isOwner, onDelete, timeFactor, timePeriod, rank, exchangeRates, isGlobalEditMode, onAssetClick }: {
     asset: AssetDisplay,
     positionsViewCurrency: string,
     totalPortfolioValueEUR: number,
@@ -656,18 +550,10 @@ function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlu
     timeFactor: number,
     timePeriod: string,
     rank?: number,
-    exchangeRates?: Record<string, number>
+    exchangeRates?: Record<string, number>,
+    isGlobalEditMode?: boolean,
+    onAssetClick?: (asset: AssetDisplay) => void
 }) {
-    const router = useRouter(); // Initialize router
-
-    // Edit State
-    const [isEditing, setIsEditing] = useState(false);
-    const [editQty, setEditQty] = useState(asset.quantity);
-    const [editCost, setEditCost] = useState(asset.buyPrice);
-    const [editCustomGroup, setEditCustomGroup] = useState(asset.customGroup || ""); // New
-    const [isSaving, setIsSaving] = useState(false);
-    const [justUpdated, setJustUpdated] = useState(false); // New state for flash effect
-
     // Currency Conversion Logic
     // Base is EUR (asset.totalValueEUR) or Native (for Original)
 
@@ -715,31 +601,10 @@ function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlu
     const companyName = getCompanyName(asset.symbol, asset.type, asset.name);
     const fmt = (n: number) => n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-    const handleSave = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (isSaving) return;
-        setIsSaving(true);
-
-        const res = await updateAsset(asset.id, {
-            quantity: Number(editQty),
-            buyPrice: Number(editCost),
-            customGroup: editCustomGroup // New
-        });
-        if (res.error) {
-            alert(res.error);
-            setIsSaving(false);
-        } else {
-            setIsEditing(false);
-            setJustUpdated(true);
-            router.refresh(); // Soft refresh
-            setTimeout(() => setJustUpdated(false), 2000); // 2s flash
-            setIsSaving(false);
-        }
-    };
-
     return (
         <div
             className="glass-panel"
+            onClick={() => isGlobalEditMode && onAssetClick?.(asset)}
             style={{
                 padding: '0', // Full bleed internal padding handled by sections
                 borderRadius: '0.6rem',
@@ -748,13 +613,13 @@ function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlu
                 position: 'relative',
                 transition: 'all 0.3s ease',
                 border: `1px solid ${ASSET_COLORS[asset.type] || ASSET_COLORS['DEFAULT']}`,
-                // Highlight if just updated (Green) or Editing (Amber)
-                borderColor: justUpdated ? '#10b981' : isEditing ? '#f59e0b' : (ASSET_COLORS[asset.type] || ASSET_COLORS['DEFAULT']) + '60',
+                // Highlight if Editing (Amber)
+                borderColor: isGlobalEditMode ? '#f59e0b' : (ASSET_COLORS[asset.type] || ASSET_COLORS['DEFAULT']) + '60',
                 filter: isBlurred ? 'blur(8px)' : 'none',
                 overflow: 'hidden',
                 height: '100%',
-                boxShadow: justUpdated ? '0 0 20px rgba(16, 185, 129, 0.4)' : isEditing ? '0 0 15px rgba(245, 158, 11, 0.2)' : 'none',
-
+                boxShadow: isGlobalEditMode ? '0 0 15px rgba(245, 158, 11, 0.2)' : 'none',
+                cursor: isGlobalEditMode ? 'pointer' : 'default'
             }}
         >
             {/* SECTION 1: HEADER (Logo + Name/Settings) */}
@@ -771,273 +636,105 @@ function AssetCard({ asset, positionsViewCurrency, totalPortfolioValueEUR, isBlu
                         <div style={{ fontSize: '1rem', fontWeight: 800, lineHeight: 1.2, color: 'var(--text-primary)', minHeight: '2.4em', display: 'flex', alignItems: 'center' }}>
                             {companyName}
                         </div>
-                        {/* Settings Icon (Toggles Edit Mode) */}
-                        {isOwner && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation(); // Stop DnD
-                                    setIsEditing(!isEditing);
-                                    // Reset edit values on open
-                                    if (!isEditing) {
-                                        setEditQty(asset.quantity);
-                                        setEditCost(asset.buyPrice);
-                                        setEditCustomGroup(asset.customGroup || ""); // New
-                                    }
-                                }}
-                                onPointerDown={(e) => e.stopPropagation()} // Stop DnD start
-                                style={{
-                                    background: isEditing ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
-                                    border: 'none',
-                                    borderRadius: '0.3rem',
-                                    cursor: 'pointer',
-                                    opacity: isEditing ? 1 : 0.5,
-                                    padding: '0.2rem',
-                                    color: isEditing ? '#f59e0b' : 'inherit',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <Settings size={16} />
-                            </button>
-                        )}
                     </div>
                     {/* Subtitle / Asset Info */}
-                    {!isEditing && (
-                        <div style={{ fontSize: '0.75rem', fontWeight: 600, marginTop: '0.2rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
-                            {asset.type === 'CASH' ? (
-                                <>
-                                    <span style={{ color: 'var(--text-secondary)' }}>Cash</span>
-                                    <span style={{ opacity: 0.3 }}>|</span>
-                                    <span style={{ opacity: 0.6 }}>{asset.quantity.toLocaleString('de-DE')} {asset.symbol}</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span style={{ color: 'var(--text-secondary)' }}>{asset.symbol}</span>
-                                    <span style={{ opacity: 0.3 }}>|</span>
-                                    <span style={{ opacity: 0.6 }}>{asset.quantity.toLocaleString('de-DE')} {asset.quantity === 1 ? 'Share' : 'Shares'}</span>
-                                </>
-                            )}
-                        </div>
-                    )}
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, marginTop: '0.2rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                        {asset.type === 'CASH' ? (
+                            <>
+                                <span style={{ color: 'var(--text-secondary)' }}>Cash</span>
+                                <span style={{ opacity: 0.3 }}>|</span>
+                                <span style={{ opacity: 0.6 }}>{asset.quantity.toLocaleString('de-DE')} {asset.symbol}</span>
+                            </>
+                        ) : (
+                            <>
+                                <span style={{ color: 'var(--text-secondary)' }}>{asset.symbol}</span>
+                                <span style={{ opacity: 0.3 }}>|</span>
+                                <span style={{ opacity: 0.6 }}>{asset.quantity.toLocaleString('de-DE')} {asset.quantity === 1 ? 'Share' : 'Shares'}</span>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* SECTION 2: BODY (FINANCIALS OR EDIT FORM) */}
+            {/* SECTION 2: BODY (FINANCIALS) */}
             <div style={{ padding: '0.6rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
 
-                {isEditing ? (
-                    /* EDIT MODE FORM */
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%', justifyContent: 'space-between' }}>
-
-                        {/* Inputs Container */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {/* Shares Input */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                <label style={{ fontSize: '0.7rem', opacity: 0.7, fontWeight: 600 }}>Shares / Quantity</label>
-                                <input
-                                    type="number"
-                                    value={editQty}
-                                    onChange={(e) => setEditQty(e.target.value as any)}
-                                    onPointerDown={e => e.stopPropagation()}
-                                    style={{
-                                        background: 'rgba(0,0,0,0.3)',
-                                        border: '1px solid var(--glass-border)',
-                                        borderRadius: '0.3rem',
-                                        padding: '0.4rem',
-                                        color: 'var(--text-primary)',
-                                        fontSize: '0.9rem',
-                                        width: '100%'
-                                    }}
-                                />
-                            </div>
-
-                            {/* Cost Input */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                <label style={{ fontSize: '0.7rem', opacity: 0.7, fontWeight: 600 }}>Avg. Cost ({asset.currency})</label>
-                                <input
-                                    type="number"
-                                    value={editCost}
-                                    onChange={(e) => setEditCost(e.target.value as any)}
-                                    onPointerDown={e => e.stopPropagation()}
-                                    style={{
-                                        background: 'rgba(0,0,0,0.3)',
-                                        border: '1px solid var(--glass-border)',
-                                        borderRadius: '0.3rem',
-                                        padding: '0.4rem',
-                                        color: 'var(--text-primary)',
-                                        fontSize: '0.9rem',
-                                        width: '100%'
-                                    }}
-                                />
-                            </div>
-
-                            {/* Portfolio Name Input */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-                                <label style={{ fontSize: '0.7rem', opacity: 0.7, fontWeight: 600 }}>Portfolio Name</label>
-                                <input
-                                    type="text"
-                                    value={editCustomGroup}
-                                    onChange={(e) => setEditCustomGroup(e.target.value)}
-                                    onPointerDown={e => e.stopPropagation()}
-                                    placeholder="Optional"
-                                    style={{
-                                        background: 'rgba(0,0,0,0.3)',
-                                        border: '1px solid var(--glass-border)',
-                                        borderRadius: '0.3rem',
-                                        padding: '0.4rem',
-                                        color: 'var(--text-primary)',
-                                        fontSize: '0.9rem',
-                                        width: '100%'
-                                    }}
-                                />
+                {/* NORMAL VIEW MODE */}
+                <>
+                    {/* Row 1: Price & Cost */}
+                    <div style={{
+                        background: 'var(--glass-bg)',
+                        borderRadius: '0.4rem',
+                        padding: '0.4rem 0.5rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-end',
+                        margin: '0 -0.2rem'
+                    }}>
+                        <div>
+                            <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Cost</div>
+                            <div style={{ fontWeight: 700, opacity: 0.9, whiteSpace: 'nowrap' }}>
+                                {currencySymbol} {asset.type === 'CASH' ? fmt(totalCost) : fmt(unitCost)}
                             </div>
                         </div>
-
-                        {/* Actions Footer */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.5rem' }}>
-
-                            {/* Delete Button (Moved here) */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDelete(asset.id);
-                                }}
-                                onPointerDown={e => e.stopPropagation()}
-                                style={{
-                                    background: 'rgba(239, 68, 68, 0.15)',
-                                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                                    borderRadius: '0.3rem',
-                                    padding: '0.4rem',
-                                    color: '#ef4444',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                                title="Delete Asset"
-                            >
-                                <Trash2 size={16} />
-                            </button>
-
-                            {/* Save/Cancel Group */}
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setIsEditing(false);
-                                    }}
-                                    onPointerDown={e => e.stopPropagation()}
-                                    style={{
-                                        background: 'rgba(255,255,255,0.1)',
-                                        border: '1px solid var(--glass-border)',
-                                        borderRadius: '0.3rem',
-                                        padding: '0.4rem 0.8rem',
-                                        cursor: 'pointer',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 600,
-                                        display: 'flex', alignItems: 'center', gap: '0.2rem'
-                                    }}
-                                >
-                                    <X size={14} /> Cancel
-                                </button>
-                                <button
-                                    onClick={handleSave}
-                                    onPointerDown={e => e.stopPropagation()}
-                                    disabled={isSaving}
-                                    style={{
-                                        background: '#10b981',
-                                        border: 'none',
-                                        borderRadius: '0.3rem',
-                                        padding: '0.4rem 0.8rem',
-                                        cursor: isSaving ? 'wait' : 'pointer',
-                                        fontSize: '0.8rem',
-                                        fontWeight: 600,
-                                        color: '#000',
-                                        display: 'flex', alignItems: 'center', gap: '0.2rem'
-                                    }}
-                                >
-                                    <Save size={14} /> {isSaving ? 'Saving...' : 'Save'}
-                                </button>
+                        <div style={{ textAlign: 'center', opacity: 0.1, fontSize: '0.7rem' }}>|</div>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Price</div>
+                            <div style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                {currencySymbol} {asset.type === 'CASH' ? fmt(totalVal) : fmt(unitPrice)}
                             </div>
                         </div>
                     </div>
-                ) : (
-                    /* NORMAL VIEW MODE */
-                    <>
-                        {/* Row 1: Price & Cost */}
-                        <div style={{
-                            background: 'var(--glass-bg)',
-                            borderRadius: '0.4rem',
-                            padding: '0.4rem 0.5rem',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'flex-end',
-                            margin: '0 -0.2rem'
-                        }}>
-                            <div>
-                                <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Cost</div>
-                                <div style={{ fontWeight: 700, opacity: 0.9, whiteSpace: 'nowrap' }}>
-                                    {currencySymbol} {asset.type === 'CASH' ? fmt(totalCost) : fmt(unitCost)}
-                                </div>
-                            </div>
-                            <div style={{ textAlign: 'center', opacity: 0.1, fontSize: '0.7rem' }}>|</div>
-                            <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Price</div>
-                                <div style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                    {currencySymbol} {asset.type === 'CASH' ? fmt(totalVal) : fmt(unitPrice)}
-                                </div>
-                            </div>
+
+                    {/* Sub-Section B: Total Data */}
+                    <div style={{
+                        background: 'var(--glass-bg)',
+                        borderRadius: '0.4rem',
+                        padding: '0.4rem 0.5rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-end',
+                        margin: '0 -0.2rem'
+                    }}>
+                        <div>
+                            <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Total Cost</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 800, opacity: 0.9, whiteSpace: 'nowrap' }}>{currencySymbol} {fmt(totalCost)}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Total Value</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{currencySymbol} {fmt(totalVal)}</div>
+                        </div>
+                    </div>
+
+                    {/* Sub-Section C: Footer (Weight | P/L) */}
+                    <div style={{
+                        background: periodProfitVal >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        borderRadius: '0.4rem',
+                        padding: '0.4rem 0.6rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        border: periodProfitVal >= 0 ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+                        marginTop: 'auto'
+                    }}>
+                        {/* Weight Column */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <div style={{ fontSize: '0.6rem', opacity: 0.6, fontWeight: 600 }}>Weight</div>
+                            <div style={{ fontSize: '0.95rem', fontWeight: 800, opacity: 0.9 }}>{fmt(weight)}%</div>
                         </div>
 
-                        {/* Sub-Section B: Total Data */}
-                        <div style={{
-                            background: 'var(--glass-bg)',
-                            borderRadius: '0.4rem',
-                            padding: '0.4rem 0.5rem',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'flex-end',
-                            margin: '0 -0.2rem'
-                        }}>
-                            <div>
-                                <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Total Cost</div>
-                                <div style={{ fontSize: '0.9rem', fontWeight: 800, opacity: 0.9, whiteSpace: 'nowrap' }}>{currencySymbol} {fmt(totalCost)}</div>
+                        {/* Profit Column (Stacked) */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 800, color: periodProfitVal >= 0 ? '#10b981' : '#ef4444' }}>
+                                <span style={{ fontSize: '0.7rem', marginRight: '0.1rem' }}>{periodProfitVal >= 0 ? '▲' : '▼'}</span>
+                                {Math.round(Math.abs(periodProfitPctVal))}%
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontSize: '0.6rem', opacity: 0.5, marginBottom: '0.1rem' }}>Total Value</div>
-                                <div style={{ fontSize: '0.9rem', fontWeight: 800, whiteSpace: 'nowrap' }}>{currencySymbol} {fmt(totalVal)}</div>
+                            <div style={{ fontSize: '0.75rem', color: periodProfitVal >= 0 ? '#10b981' : '#ef4444', fontWeight: 600, opacity: 0.9 }}>
+                                {periodProfitVal >= 0 ? '+' : ''}{currencySymbol} {fmt(Math.abs(periodProfitVal))}
                             </div>
                         </div>
-
-                        {/* Sub-Section C: Footer (Weight | P/L) */}
-                        <div style={{
-                            background: periodProfitVal >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                            borderRadius: '0.4rem',
-                            padding: '0.4rem 0.6rem',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            border: periodProfitVal >= 0 ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
-                            marginTop: 'auto'
-                        }}>
-                            {/* Weight Column */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                                <div style={{ fontSize: '0.6rem', opacity: 0.6, fontWeight: 600 }}>Weight</div>
-                                <div style={{ fontSize: '0.95rem', fontWeight: 800, opacity: 0.9 }}>{fmt(weight)}%</div>
-                            </div>
-
-                            {/* Profit Column (Stacked) */}
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: periodProfitVal >= 0 ? '#10b981' : '#ef4444' }}>
-                                    <span style={{ fontSize: '0.7rem', marginRight: '0.1rem' }}>{periodProfitVal >= 0 ? '▲' : '▼'}</span>
-                                    {fmt(Math.abs(periodProfitPctVal))}%
-                                </div>
-                                <div style={{ fontSize: '0.75rem', color: periodProfitVal >= 0 ? '#10b981' : '#ef4444', fontWeight: 600, opacity: 0.9 }}>
-                                    {periodProfitVal >= 0 ? '+' : ''}{currencySymbol} {fmt(Math.abs(periodProfitVal))}
-                                </div>
-                            </div>
-                        </div>
-                    </>
-                )}
+                    </div>
+                </>
             </div>
         </div>
     );
@@ -1200,7 +897,9 @@ function AssetGroup({
     dragHandleProps,
     columns,
     timePeriod,
-    exchangeRates
+    exchangeRates,
+    isGlobalEditMode,
+    onAssetClick
 }: {
     type: string,
     assets: AssetDisplay[],
@@ -1213,7 +912,9 @@ function AssetGroup({
     dragHandleProps?: any,
     columns?: ColumnId[],
     timePeriod: string,
-    exchangeRates?: Record<string, number>
+    exchangeRates?: Record<string, number>,
+    isGlobalEditMode?: boolean,
+    onAssetClick?: (asset: AssetDisplay) => void
 }) {
     const [isExpanded, setIsExpanded] = useState(false); // Default: Collapsed
 
@@ -1263,6 +964,8 @@ function AssetGroup({
                                 timeFactor={timeFactor}
                                 columns={columns}
                                 timePeriod={timePeriod}
+                                isGlobalEditMode={isGlobalEditMode}
+                                onAssetClick={onAssetClick}
                             />
                         </SortableAssetRow>
                     ))}
@@ -1287,7 +990,9 @@ function AssetGroupGrid({
     timeFactor,
     dragHandleProps,
     timePeriod,
-    exchangeRates
+    exchangeRates,
+    isGlobalEditMode,
+    onAssetClick
 }: {
     type: string,
     assets: AssetDisplay[],
@@ -1302,7 +1007,9 @@ function AssetGroupGrid({
     timeFactor: number,
     dragHandleProps?: any,
     timePeriod: string,
-    exchangeRates?: Record<string, number>
+    exchangeRates?: Record<string, number>,
+    isGlobalEditMode?: boolean,
+    onAssetClick?: (asset: AssetDisplay) => void
 }) {
     const [isExpanded, setIsExpanded] = useState(false); // Default: Collapsed
 
@@ -1365,6 +1072,8 @@ function AssetGroupGrid({
                                         onDelete={onDelete}
                                         timeFactor={timeFactor}
                                         timePeriod={timePeriod}
+                                        isGlobalEditMode={isGlobalEditMode}
+                                        onAssetClick={onAssetClick}
                                     />
                                 )}
                             </SortableAssetCard>
@@ -1391,9 +1100,11 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
     const [gridColumns, setGridColumns] = useState<1 | 2>(2);
     const [timePeriod, setTimePeriod] = useState("ALL");
 
+    // Global Edit Mode State
+    const [isGlobalEditMode, setIsGlobalEditMode] = useState(false);
+    const [editingAsset, setEditingAsset] = useState<AssetDisplay | null>(null);
+
     // DEBUG: Deployment Check
-
-
     const [isTimeSelectorHovered, setIsTimeSelectorHovered] = useState(false);
     const [isGroupingSelectorHovered, setIsGroupingSelectorHovered] = useState(false);
     const [isViewSelectorHovered, setIsViewSelectorHovered] = useState(false);
@@ -1640,14 +1351,31 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
 
     const pLTitle = `P&L (${timePeriod})`;
 
-    // Get unique values for each filter
-    const types = Array.from(new Set(assets.map(a => a.type).filter(Boolean))) as string[];
-    const exchanges = Array.from(new Set(assets.map(a => a.exchange).filter(Boolean))) as string[];
-    const currencies = Array.from(new Set(assets.map(a => a.currency).filter(Boolean))) as string[];
-    const countries = Array.from(new Set(assets.map(a => a.country).filter(Boolean))) as string[];
-    const sectors = Array.from(new Set(assets.map(a => a.sector).filter(Boolean))) as string[];
-    const platforms = Array.from(new Set(assets.map(a => a.platform).filter(Boolean))) as string[];
-    const customGroups = Array.from(new Set(assets.map(a => a.customGroup || 'Main Portfolio'))) as string[];
+    // Smart Filtering: Get unique values based on currently filtered assets
+    // This ensures filter options only show what's available given active filters
+    const getFilteredAssets = () => {
+        return items.filter(asset => {
+            if (typeFilter && asset.type !== typeFilter) return false;
+            if (exchangeFilter && asset.exchange !== exchangeFilter) return false;
+            if (currencyFilter && asset.currency !== currencyFilter) return false;
+            if (countryFilter && asset.country !== countryFilter) return false;
+            if (sectorFilter && asset.sector !== sectorFilter) return false;
+            if (platformFilter && asset.platform !== platformFilter) return false;
+            if (customGroupFilter && (asset.customGroup || 'Main Portfolio') !== customGroupFilter) return false;
+            return true;
+        });
+    };
+
+    const availableAssets = getFilteredAssets();
+
+    // Get unique values for each filter from available assets
+    const types = Array.from(new Set(availableAssets.map(a => a.type).filter(Boolean))) as string[];
+    const exchanges = Array.from(new Set(availableAssets.map(a => a.exchange).filter(Boolean))) as string[];
+    const currencies = Array.from(new Set(availableAssets.map(a => a.currency).filter(Boolean))) as string[];
+    const countries = Array.from(new Set(availableAssets.map(a => a.country).filter(Boolean))) as string[];
+    const sectors = Array.from(new Set(availableAssets.map(a => a.sector).filter(Boolean))) as string[];
+    const platforms = Array.from(new Set(availableAssets.map(a => a.platform).filter(Boolean))) as string[];
+    const customGroups = Array.from(new Set(availableAssets.map(a => a.customGroup || 'Main Portfolio'))) as string[];
 
     // Filter categories
     const filterCategories = [
@@ -1661,21 +1389,29 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
     ];
 
     // Close Adjust List on outside click
+    // State for dropdown positioning
+    const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+
+    // Close Adjust List on outside click
     const adjustListRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (adjustListRef.current && !adjustListRef.current.contains(event.target as Node)) {
                 setIsAdjustListOpen(false);
             }
+            // Close filter dropdown on click outside
+            if (activeFilterCategory && !(event.target as Element).closest('.filter-btn') && !(event.target as Element).closest('.filter-dropdown')) {
+                setActiveFilterCategory(null);
+            }
         };
 
-        if (isAdjustListOpen) {
+        if (isAdjustListOpen || activeFilterCategory) {
             document.addEventListener('mousedown', handleClickOutside);
         }
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [isAdjustListOpen]);
+    }, [isAdjustListOpen, activeFilterCategory]);
 
     const activeFiltersCount = [typeFilter, exchangeFilter, currencyFilter, countryFilter, sectorFilter, platformFilter].filter(Boolean).length;
 
@@ -1685,7 +1421,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
 
     return (
         <DndContext
-            id={dndContextId}
+            id="dashboard-dnd-context"
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
@@ -1696,126 +1432,169 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                     {/* LEFT COLUMN: Main Content (Filters + Assets) - Flex Grow */}
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
 
-                        {/* 1. Smart Filter Bar (Compacted & No Label) */}
+                        {/* 1. Smart Filter Bar (Maximized Space + Bottom Clear) */}
                         <div className="glass-panel" style={{
-                            borderRadius: '0.6rem',
-                            padding: '0.4rem',
+                            borderRadius: '0.8rem',
+                            padding: '0.6rem 0.8rem',
                             display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.4rem',
-                            flexWrap: 'nowrap',
+                            flexDirection: 'column', // Stack filters and clear button vertically
+                            gap: '0.5rem',
                             zIndex: 50,
                             position: 'relative',
-                            overflow: 'visible'
+                            width: '100%',
+                            fontFamily: 'inherit'
                         }}>
-                            <div style={{ display: 'flex', gap: '0.2rem', flexWrap: 'nowrap', alignItems: 'center', flex: 1, overflowX: 'auto', paddingBottom: '2px' }} className="no-scrollbar">
+                            <style jsx>{`
+                                .no-scrollbar::-webkit-scrollbar {
+                                    display: none;
+                                }
+                            `}</style>
 
+                            {/* ROW 1: Filters (Full Width, Single Line) */}
+                            <div className="no-scrollbar" style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.3rem', // Tight gap to fit more
+                                overflowX: 'auto',  // Allow scroll if absolutely necessary but aim for fit
+                                overflowY: 'hidden',
+                                width: '100%',
+                                whiteSpace: 'nowrap',
+                                scrollbarWidth: 'none',
+                                msOverflowStyle: 'none',
+                                justifyContent: 'space-between' // Distribute evenly or justify-start? Start is safer for variable widths.
+                            }}>
+                                <div style={{ display: 'flex', gap: '0.3rem', width: '100%' }}>
+                                    {filterCategories.map(category => (
+                                        <div key={category.id} style={{ position: 'relative', flex: '1 1 auto', minWidth: 0 }}>
+                                            <button
+                                                className="filter-btn"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (activeFilterCategory === category.id) {
+                                                        setActiveFilterCategory(null);
+                                                    } else {
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        setDropdownPos({ top: rect.bottom + 5, left: rect.left });
+                                                        setActiveFilterCategory(category.id);
+                                                    }
+                                                }}
+                                                style={{
+                                                    background: category.active ? 'var(--bg-active)' : 'rgba(255,255,255,0.03)',
+                                                    border: category.active ? '1px solid var(--accent)' : '1px solid var(--glass-border)',
+                                                    borderRadius: '0.4rem',
+                                                    color: category.active ? 'var(--accent)' : 'var(--text-primary)',
+                                                    padding: '0.35rem 0.2rem', // Minimal horizontal padding
+                                                    width: '100%', // Force button to fill its flex slot
+                                                    fontSize: '0.7rem', // Smaller font
+                                                    fontWeight: 500,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center', // Center content
+                                                    gap: '0.2rem',
+                                                    whiteSpace: 'nowrap',
+                                                    fontFamily: 'inherit',
+                                                    overflow: 'hidden', // Clip text if too long
+                                                    textOverflow: 'ellipsis'
+                                                }}
+                                                title={category.label}
+                                            >
+                                                <span style={{ opacity: 0.7, fontSize: '0.8rem' }}>{category.icon}</span>
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{category.label}</span>
+                                                {category.active && <span style={{ fontSize: '0.6rem', opacity: 0.8, background: 'rgba(0,0,0,0.1)', padding: '0 3px', borderRadius: '3px', marginLeft: '2px' }}>✓</span>}
+                                                <span style={{ fontSize: '0.55rem', opacity: 0.4 }}>▼</span>
+                                            </button>
 
-                                {filterCategories.map(category => (
-                                    <div key={category.id} style={{ position: 'relative', flexShrink: 0 }}>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); setActiveFilterCategory(activeFilterCategory === category.id ? null : category.id); }}
-                                            style={{
-                                                background: category.active ? 'var(--bg-active)' : 'var(--glass-bg)',
-                                                border: category.active ? '1px solid var(--accent)' : '1px solid var(--glass-border)',
-                                                borderRadius: '0.4rem',
-                                                color: category.active ? 'var(--accent)' : 'var(--text-secondary)',
-                                                padding: '0.25rem 0.5rem',
-                                                fontSize: '0.65rem',
-                                                fontWeight: 600,
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.2rem',
-                                                whiteSpace: 'nowrap'
-                                            }}
-                                        >
-                                            <span style={{ opacity: 0.7 }}>{category.icon}</span>
-                                            <span>{category.label}</span>
-                                            {category.active && <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>({category.active})</span>}
-                                            <span style={{ fontSize: '0.55rem', opacity: 0.4 }}>▼</span>
-                                        </button>
-
-                                        {/* Dropdown Menu */}
-                                        {activeFilterCategory === category.id && category.items.length > 0 && (
-                                            <div style={{
-                                                position: 'absolute',
-                                                top: '100%',
-                                                left: 0,
-                                                marginTop: '0.4rem',
-                                                background: 'var(--bg-secondary)',
-                                                border: '1px solid var(--glass-border)',
-                                                borderRadius: '0.5rem',
-                                                padding: '0.4rem',
-                                                minWidth: '180px',
-                                                maxHeight: '250px',
-                                                overflowY: 'auto',
-                                                zIndex: 1000,
-                                                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-                                            }}>
-                                                {category.items.map(item => (
-                                                    <button
-                                                        key={item}
-                                                        onClick={() => {
-                                                            category.setter(category.active === item ? null : item);
-                                                            setActiveFilterCategory(null);
-                                                        }}
-                                                        style={{
-                                                            width: '100%',
-                                                            padding: '0.5rem 0.6rem',
-                                                            background: category.active === item ? 'var(--bg-active)' : 'transparent',
-                                                            border: 'none',
-                                                            borderRadius: '0.4rem',
-                                                            color: category.active === item ? 'var(--text-active)' : 'var(--text-secondary)',
-                                                            fontSize: '0.75rem',
-                                                            fontWeight: category.active === item ? 600 : 400,
-                                                            cursor: 'pointer',
-                                                            textAlign: 'left',
-                                                            transition: 'all 0.2s',
-                                                            display: 'block',
-                                                            marginBottom: '0.1rem'
-                                                        }}
-                                                    >
-                                                        {item}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
+                                            {/* Dropdown Menu (Fixed Position) */}
+                                            {activeFilterCategory === category.id && category.items.length > 0 && (
+                                                <div
+                                                    className="filter-dropdown"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    style={{
+                                                        position: 'fixed',
+                                                        top: dropdownPos.top,
+                                                        left: dropdownPos.left,
+                                                        background: 'var(--bg-secondary)',
+                                                        border: '1px solid var(--glass-border)',
+                                                        borderRadius: '0.5rem',
+                                                        padding: '0.4rem',
+                                                        minWidth: '160px',
+                                                        maxHeight: '250px',
+                                                        overflowY: 'auto',
+                                                        zIndex: 9999,
+                                                        boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                                                    }}>
+                                                    {category.items.map(item => (
+                                                        <button
+                                                            key={item}
+                                                            onClick={() => {
+                                                                category.setter(category.active === item ? null : item);
+                                                                setActiveFilterCategory(null);
+                                                            }}
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '0.5rem 0.6rem',
+                                                                background: category.active === item ? 'var(--bg-active)' : 'transparent',
+                                                                border: 'none',
+                                                                borderRadius: '0.4rem',
+                                                                color: category.active === item ? 'var(--text-active)' : 'var(--text-secondary)',
+                                                                fontSize: '0.8rem',
+                                                                fontWeight: category.active === item ? 600 : 400,
+                                                                cursor: 'pointer',
+                                                                textAlign: 'left',
+                                                                transition: 'all 0.2s',
+                                                                display: 'block',
+                                                                marginBottom: '0.1rem',
+                                                                fontFamily: 'inherit'
+                                                            }}
+                                                        >
+                                                            {item}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
 
+                            {/* ROW 2: Clear All Button (Left Aligned) */}
                             {activeFiltersCount > 0 && (
-                                <button
-                                    onClick={() => {
-                                        setTypeFilter(null);
-                                        setExchangeFilter(null);
-                                        setCurrencyFilter(null);
-                                        setCountryFilter(null);
-                                        setSectorFilter(null);
-                                        setPlatformFilter(null);
-                                        setCustomGroupFilter(null);
-                                    }}
-                                    style={{
-                                        background: 'rgba(239, 68, 68, 0.1)',
-                                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                                        borderRadius: '0.4rem',
-                                        color: '#ef4444',
-                                        padding: '0.25rem 0.5rem',
-                                        fontSize: '0.65rem',
-                                        fontWeight: 600,
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s',
-                                        marginLeft: 'auto',
-                                        whiteSpace: 'nowrap',
-                                        flexShrink: 0
-                                    }}
-                                >
-                                    Clear All
-                                </button>
+                                <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-start' }}>
+                                    <button
+                                        onClick={() => {
+                                            setTypeFilter(null);
+                                            setExchangeFilter(null);
+                                            setCurrencyFilter(null);
+                                            setCountryFilter(null);
+                                            setSectorFilter(null);
+                                            setPlatformFilter(null);
+                                            setCustomGroupFilter(null);
+                                        }}
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: '#ef4444',
+                                            padding: '0',
+                                            fontSize: '0.7rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.2rem',
+                                            fontFamily: 'inherit',
+                                            opacity: 0.8
+                                        }}
+                                    >
+                                        <span style={{ fontSize: '0.8rem' }}>✕</span>
+                                        <span style={{ textDecoration: 'underline' }}>Clear All Filters</span>
+                                    </button>
+                                </div>
                             )}
                         </div>
+
 
                         {/* 2. Positions Section */}
                         <div className="glass-panel positions-card" style={{ borderRadius: '0.75rem', padding: '1rem' }}>
@@ -1975,6 +1754,45 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
 
                                     {/* 2. View Mode Selector Removed */}
 
+                                    {/* Edit Mode Toggle */}
+                                    <div style={{ position: 'relative', marginRight: '0.5rem' }}>
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            background: 'var(--glass-shine)',
+                                            backdropFilter: 'blur(10px)',
+                                            borderRadius: '2rem',
+                                            padding: '0.3rem',
+                                            border: '1px solid var(--glass-border)',
+                                            height: '2.4rem',
+                                            transition: 'all 0.3s ease'
+                                        }}>
+                                            <button
+                                                onClick={() => setIsGlobalEditMode(!isGlobalEditMode)}
+                                                style={{
+                                                    background: isGlobalEditMode ? '#f59e0b' : 'transparent',
+                                                    border: 'none',
+                                                    borderRadius: '1.5rem',
+                                                    color: isGlobalEditMode ? '#fff' : 'var(--text-secondary)',
+                                                    padding: '0.3rem',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '0.3rem',
+                                                    transition: 'all 0.2s',
+                                                    width: '2.4rem',
+                                                    height: '100%'
+                                                }}
+                                                title="Toggle Edit Mode"
+                                            >
+                                                <Settings size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+
                                     {/* 3. Adjust List Button (Only in List View) */}
                                     {viewMode === 'list' && (
                                         <div ref={adjustListRef} style={{ position: 'relative' }}>
@@ -2031,7 +1849,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                     <div style={{ fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.8rem', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                         <span>Table Columns</span>
                                                         <button
-                                                            onClick={() => setActiveColumns(['PORTFOLIO_NAME', 'NAME', 'PRICE', 'VALUE', 'PRICE_EUR', 'VALUE_EUR', 'PL'])}
+                                                            onClick={() => setActiveColumns(['PORTFOLIO_NAME', 'NAME', 'PRICE', 'VALUE', 'PL'])}
                                                             style={{
                                                                 fontSize: '0.65rem',
                                                                 opacity: 0.7,
@@ -2110,7 +1928,8 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                 flexDirection: 'column',
                                                 padding: 0,
                                                 gap: 0,
-                                                overflow: 'hidden',
+                                                overflowX: 'auto',
+                                                overflowY: 'hidden',
                                                 borderRadius: '0.8rem'
                                             }}>
                                                 {/* Table Header Always Show in List View */}
@@ -2131,16 +1950,51 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                 // Dynamic label shortening for high column counts
                                                                 if (activeColumns.length >= 7) {
                                                                     if (colId === 'EXCHANGE') label = 'EXCH.';
-                                                                    if (colId === 'CURRENCY') label = 'CCY';
+                                                                    // if (colId === 'CURRENCY') label = 'CCY'; // Removed legacy logic
                                                                 }
 
                                                                 // Dynamic Header Labels for Currency
                                                                 const globalCurrency = positionsViewCurrency === 'ORG' ? 'EUR' : positionsViewCurrency;
                                                                 const globalSym = getCurrencySymbol(globalCurrency);
 
-                                                                if (colId === 'PRICE_EUR') label = `PRICE (${globalSym})`;
-                                                                if (colId === 'VALUE_EUR') label = `VALUE (${globalSym})`;
-                                                                if (colId === 'PL') label = `P&L (${globalSym})`;
+                                                                let headerContent: React.ReactNode = label;
+
+                                                                if (colId === 'CURRENCY') {
+                                                                    headerContent = (
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                            <Banknote size={12} strokeWidth={2.5} style={{ opacity: 0.8 }} />
+                                                                            <span>FX</span>
+                                                                        </div>
+                                                                    );
+                                                                } else if (colId === 'PRICE') {
+                                                                    headerContent = (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.1 }}>
+                                                                            <span>PRICE</span>
+                                                                            <span style={{ fontSize: '0.55rem', opacity: 0.5, fontWeight: 500 }}>COST</span>
+                                                                        </div>
+                                                                    );
+                                                                } else if (colId === 'VALUE') {
+                                                                    headerContent = (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.1 }}>
+                                                                            <span>VALUE</span>
+                                                                            <span style={{ fontSize: '0.55rem', opacity: 0.5, fontWeight: 500 }}>TOTAL COST</span>
+                                                                        </div>
+                                                                    );
+                                                                } else if (colId === 'PRICE_EUR') {
+                                                                    headerContent = (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.1 }}>
+                                                                            <span>PRICE ({globalSym})</span>
+                                                                            <span style={{ fontSize: '0.55rem', opacity: 0.5, fontWeight: 500 }}>COST ({globalSym})</span>
+                                                                        </div>
+                                                                    );
+                                                                } else if (colId === 'VALUE_EUR') {
+                                                                    headerContent = (
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.1 }}>
+                                                                            <span>VALUE ({globalSym})</span>
+                                                                            <span style={{ fontSize: '0.55rem', opacity: 0.5, fontWeight: 500 }}>TOTAL COST</span>
+                                                                        </div>
+                                                                    );
+                                                                }
 
                                                                 return (
                                                                     <DraggableHeader key={colId} id={`col:${colId}`} columnsCount={activeColumns.length}>
@@ -2153,7 +2007,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                             display: 'block',
                                                                             textAlign: ['PRICE', 'PRICE_EUR', 'VALUE', 'VALUE_EUR', 'PL'].includes(colId) ? 'right' : 'left'
                                                                         }}>
-                                                                            {colId === 'PORTFOLIO_NAME' ? <Briefcase size={activeColumns.length > 8 ? 11 : 13} strokeWidth={2.5} /> : label}
+                                                                            {colId === 'PORTFOLIO_NAME' ? <Briefcase size={activeColumns.length > 8 ? 11 : 13} strokeWidth={2.5} /> : headerContent}
                                                                         </span>
                                                                     </DraggableHeader>
                                                                 );
@@ -2165,7 +2019,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                 {groupingKey !== 'none' ? (
                                                     <SortableContext items={orderedGroups.filter(g => groupedAssets[g]).map(g => `group:${g}`)} strategy={verticalListSortingStrategy}>
                                                         {orderedGroups.filter(type => groupedAssets[type]).map(type => (
-                                                            <SortableGroup key={type} id={`group:${type}`}>
+                                                            <SortableGroup key={type} id={`group:${type}`} disabled={isGlobalEditMode}>
                                                                 <AssetGroup
                                                                     type={type}
                                                                     assets={groupedAssets[type]}
@@ -2178,6 +2032,8 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                     columns={activeColumns}
                                                                     timePeriod={timePeriod}
                                                                     exchangeRates={exchangeRates}
+                                                                    isGlobalEditMode={isGlobalEditMode}
+                                                                    onAssetClick={setEditingAsset}
                                                                 />
                                                             </SortableGroup>
                                                         ))}
@@ -2185,7 +2041,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                 ) : (
                                                     <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
                                                         {filteredAssets.map((asset, index) => (
-                                                            <SortableAssetRow key={asset.id} id={asset.id}>
+                                                            <SortableAssetRow key={asset.id} id={asset.id} disabled={isGlobalEditMode}>
                                                                 <AssetTableRow
                                                                     asset={asset}
                                                                     positionsViewCurrency={positionsViewCurrency}
@@ -2196,6 +2052,9 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                     rowIndex={index}
                                                                     columns={activeColumns}
                                                                     timePeriod={timePeriod}
+                                                                    exchangeRates={exchangeRates}
+                                                                    isGlobalEditMode={isGlobalEditMode}
+                                                                    onAssetClick={setEditingAsset}
                                                                 />
                                                             </SortableAssetRow>
                                                         ))}
@@ -2218,7 +2077,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                             const groupTotal = groupTotals[type] || 0;
 
                                                             return (
-                                                                <SortableGroup key={type} id={`group:${type}`}>
+                                                                <SortableGroup key={type} id={`group:${type}`} disabled={isGlobalEditMode}>
                                                                     <AssetGroupGrid
                                                                         type={type}
                                                                         assets={groupAssets}
@@ -2233,6 +2092,8 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                         timeFactor={getTimeFactor()}
                                                                         timePeriod={timePeriod}
                                                                         exchangeRates={exchangeRates}
+                                                                        isGlobalEditMode={isGlobalEditMode}
+                                                                        onAssetClick={setEditingAsset}
                                                                     />
                                                                 </SortableGroup>
                                                             );
@@ -2248,7 +2109,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                         <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
                                                             {filteredAssets.map((asset, index) => {
                                                                 return (
-                                                                    <SortableAssetCard key={asset.id} id={asset.id}>
+                                                                    <SortableAssetCard key={asset.id} id={asset.id} disabled={isGlobalEditMode}>
                                                                         {viewMode === 'detailed' ? (
                                                                             <DetailedAssetCard
                                                                                 asset={asset}
@@ -2259,6 +2120,7 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                                 onDelete={handleDelete}
                                                                                 timeFactor={getTimeFactor()}
                                                                                 timePeriod={timePeriod}
+                                                                                exchangeRates={exchangeRates}
                                                                             />
                                                                         ) : (
                                                                             <AssetCard
@@ -2270,6 +2132,9 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                                                                                 onDelete={handleDelete}
                                                                                 timeFactor={getTimeFactor()}
                                                                                 timePeriod={timePeriod}
+                                                                                exchangeRates={exchangeRates}
+                                                                                isGlobalEditMode={isGlobalEditMode}
+                                                                                onAssetClick={setEditingAsset}
                                                                             />
                                                                         )}
                                                                     </SortableAssetCard>
@@ -2306,6 +2171,14 @@ export default function Dashboard({ username, isOwner, totalValueEUR, assets, is
                 onConfirm={confirmDelete}
                 assetSymbol={assetToDelete?.symbol || 'Asset'}
             />
+
+            {editingAsset && (
+                <EditAssetModal
+                    asset={editingAsset}
+                    isOpen={!!editingAsset}
+                    onClose={() => setEditingAsset(null)}
+                />
+            )}
         </DndContext>
     );
 }

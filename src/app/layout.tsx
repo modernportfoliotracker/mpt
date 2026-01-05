@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { CurrencyProvider } from "@/context/CurrencyContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,9 +37,11 @@ export default function RootLayout({
           }}
         />
         <ThemeProvider>
-          <main className="container" style={{ paddingTop: '6rem' }}>
-            {children}
-          </main>
+          <CurrencyProvider>
+            <main className="container" style={{ paddingTop: '6rem' }}>
+              {children}
+            </main>
+          </CurrencyProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -110,6 +110,8 @@ export async function getMarketPrice(symbol: string, type: string, exchange?: st
             searchSymbol = 'XAUTRY=X'; // Ounce Gold in TRY
         } else if (symbol === 'XAGTRY') {
             searchSymbol = 'XAGTRY=X'; // Ounce Silver in TRY
+        } else if (symbol === 'RABO') {
+            searchSymbol = 'RABO.AS';
         } else if (type === 'STOCK' && !symbol.includes('.')) {
             // Check if it's a known BIST stock or trust Yahoo to find it? 
             // Better to try direct symbol first.
@@ -180,6 +182,12 @@ export async function getMarketPrice(symbol: string, type: string, exchange?: st
                 price = price / 31.1034768;
             }
 
+            // Special handling for RABO (Rabobank Certificates treated as 1/100 split by user)
+            if (symbol === 'RABO') {
+                // RABO.AS is ~115 EUR, User tracks as ~1.15 EUR
+                price = price / 100.0;
+            }
+
             // Conversion for Gram Silver
             if (symbol === 'XAGTRY') {
                 price = price / 31.1034768;
@@ -197,6 +205,46 @@ export async function getMarketPrice(symbol: string, type: string, exchange?: st
                 change24h = price - previousClose;
             }
 
+            // Fetch company profile for country and sector
+            // Priority: Alpha Vantage (free, reliable) → Finnhub → Yahoo (rate-limited)
+            let profileData = null;
+            if (type === 'STOCK' || type === 'ETF' || type === 'FUND') {
+                try {
+                    // Try Alpha Vantage first (500 req/day, has sector data)
+                    const { getCompanyOverview } = await import('./alphaVantageApi');
+                    profileData = await getCompanyOverview(searchSymbol);
+
+                    if (!profileData) {
+                        // Fallback to Finnhub (but profile2 is premium)
+                        try {
+                            const { getCompanyProfile } = await import('./finnhubApi');
+                            const profile = await getCompanyProfile(searchSymbol);
+                            if (profile) {
+                                profileData = {
+                                    country: profile.country,
+                                    sector: profile.sector || profile.finnhubIndustry,
+                                    industry: profile.industry
+                                };
+                            }
+                        } catch (finnhubError) {
+                            // Continue to Yahoo fallback
+                        }
+                    }
+
+                    if (!profileData) {
+                        // Last resort: Yahoo (has rate limits)
+                        try {
+                            const { getYahooAssetProfile } = await import('./yahooApi');
+                            profileData = await getYahooAssetProfile(searchSymbol);
+                        } catch (yahooError) {
+                            console.warn('[MarketData] All profile APIs failed');
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[MarketData] Failed to fetch asset profile:', e);
+                }
+            }
+
             return {
                 price: price,
                 timestamp: quote.regularMarketTime ? new Date(quote.regularMarketTime).toLocaleString('tr-TR') : new Date().toLocaleString('tr-TR'),
@@ -204,7 +252,10 @@ export async function getMarketPrice(symbol: string, type: string, exchange?: st
                 previousClose: previousClose,
                 change24h: change24h,
                 changePercent: previousClose ? (change24h / previousClose) * 100 : 0,
-                nextEarningsDate: quote.earningsTimestamp ? new Date(quote.earningsTimestamp * 1000).toLocaleDateString('tr-TR') : undefined
+                nextEarningsDate: quote.earningsTimestamp ? new Date(quote.earningsTimestamp * 1000).toLocaleDateString('tr-TR') : undefined,
+                country: profileData?.country,
+                sector: profileData?.sector,
+                industry: profileData?.industry
             };
         }
     } catch (error) {
