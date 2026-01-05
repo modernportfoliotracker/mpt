@@ -1,6 +1,7 @@
 import { apiCache } from '@/lib/cache';
 import YahooFinance from 'yahoo-finance2';
 import { prisma } from '@/lib/prisma';
+import { trackApiRequest } from './telemetry';
 
 const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
@@ -39,11 +40,13 @@ async function searchDirect(query: string): Promise<YahooSymbol[]> {
 
         if (!response.ok) {
             console.error(`[YahooApi] Direct search failed: ${response.status}`);
+            trackApiRequest('YAHOO_DIRECT', false);
             return [];
         }
 
         const data = await response.json();
         const quotes = data.quotes || [];
+        trackApiRequest('YAHOO_DIRECT', true);
 
         return quotes.map((q: any) => ({
             symbol: q.symbol,
@@ -56,9 +59,11 @@ async function searchDirect(query: string): Promise<YahooSymbol[]> {
 
     } catch (e) {
         console.error('[YahooApi] Direct search error:', e);
+        trackApiRequest('YAHOO_DIRECT', false);
         return [];
     }
 }
+
 
 /**
  * Search for symbols using Yahoo Finance
@@ -74,6 +79,7 @@ export async function searchYahoo(query: string): Promise<YahooSymbol[]> {
     try {
         console.log(`[YahooApi] Searching with Library: ${query}`);
         const results = await yahooFinance.search(query);
+        trackApiRequest('YAHOO', true);
         const quotes = results.quotes.filter((q: any) => q.isYahooFinance);
 
         const mapped = quotes.map((q: any) => ({
@@ -89,6 +95,7 @@ export async function searchYahoo(query: string): Promise<YahooSymbol[]> {
         return mapped;
     } catch (error) {
         console.error('[YahooApi] Library search error, trying fallback:', error);
+        trackApiRequest('YAHOO', false);
     }
 
     // Fallback
@@ -186,61 +193,67 @@ export async function getYahooQuote(symbol: string, forceRefresh: boolean = fals
             if (direct) return direct;
         }
 
+        // Primary Fetch
         console.log(`[YahooApi] Fetching fresh quote for ${symbol}...`);
-        // Random jitter
         await new Promise(resolve => setTimeout(resolve, Math.random() * 1000));
-        const result = await yahooFinance.quote(symbol);
-        if (!result || !result.symbol) {
-            console.warn(`[YahooApi] No result from Yahoo Finance for ${symbol}`);
-            // If no result, proceed to fallbacks
-            throw new Error(`No result from Yahoo Finance for ${symbol}`);
-        }
 
-        // --- CLOSING PRICE LOGIC ---
-        // We always want the LATEST available price (regularMarketPrice).
-        const effectivePrice = result.regularMarketPrice;
-        const effectiveCurrency = forcedCurrency || result.currency; // Override with detected currency if available
+        try {
+            const result = await yahooFinance.quote(symbol);
+            if (!result || !result.symbol) throw new Error("No Result");
 
-        const quote: YahooQuote = {
-            symbol: result.symbol,
-            regularMarketPrice: effectivePrice,
-            currency: effectiveCurrency,
-            regularMarketTime: result.regularMarketTime,
-            marketState: result.marketState,
-            regularMarketPreviousClose: (result as any).main_regularMarketPreviousClose || result.regularMarketPreviousClose,
-            earningsTimestamp: (result as any).earningsTimestamp || (result as any).earningsTimestampStart
-        };
+            trackApiRequest('YAHOO', true);
+            // ... Logic continues ...
 
-        // Save to DB
-        await prisma.priceCache.upsert({
-            where: { symbol: quote.symbol },
-            create: {
-                symbol: quote.symbol,
-                price: quote.regularMarketPrice || 0,
-                currency: quote.currency || 'USD',
-                marketState: quote.marketState,
-                updatedAt: new Date()
-            },
-            update: {
-                price: quote.regularMarketPrice || 0,
-                currency: quote.currency || 'USD',
-                marketState: quote.marketState,
-                updatedAt: new Date() // Force update timestamp
+            // --- CLOSING PRICE LOGIC ---
+            // We always want the LATEST available price (regularMarketPrice).
+            const effectivePrice = result.regularMarketPrice;
+            const effectiveCurrency = forcedCurrency || result.currency; // Override with detected currency if available
+
+            const quote: YahooQuote = {
+                symbol: result.symbol,
+                regularMarketPrice: effectivePrice,
+                currency: effectiveCurrency,
+                regularMarketTime: result.regularMarketTime,
+                marketState: result.marketState,
+                regularMarketPreviousClose: (result as any).main_regularMarketPreviousClose || result.regularMarketPreviousClose,
+                earningsTimestamp: (result as any).earningsTimestamp || (result as any).earningsTimestampStart
+            };
+
+            // Save to DB
+            await prisma.priceCache.upsert({
+                where: { symbol: quote.symbol },
+                create: {
+                    symbol: quote.symbol,
+                    price: quote.regularMarketPrice || 0,
+                    currency: quote.currency || 'USD',
+                    marketState: quote.marketState,
+                    updatedAt: new Date()
+                },
+                update: {
+                    price: quote.regularMarketPrice || 0,
+                    currency: quote.currency || 'USD',
+                    marketState: quote.marketState,
+                    updatedAt: new Date() // Force update timestamp
+                }
+            }).catch(err => console.error('[YahooApi] DB Upsert Error:', err));
+
+            // Crypto 7/24 Logic
+            if (isCrypto(quote.symbol)) {
+                quote.marketState = 'REGULAR';
             }
-        }).catch(err => console.error('[YahooApi] DB Upsert Error:', err));
 
-        // Crypto 7/24 Logic
-        if (isCrypto(quote.symbol)) {
-            quote.marketState = 'REGULAR';
+            // Save to Memory
+            apiCache.set(cacheKey, quote, 0.5);
+
+            return quote;
+
+        } catch (innerError) {
+            throw innerError; // Rethrow to trigger outer catch block
         }
-
-        // Save to Memory
-        apiCache.set(cacheKey, quote, 0.5);
-
-        return quote;
 
     } catch (error: any) {
         console.warn(`[YahooApi] Primary quote failed for ${symbol}:`, error?.message || error);
+        trackApiRequest('YAHOO', false);
 
         // Use the detectCurrency defined at the top of the function
         const forcedCurrencyFallback = detectCurrency(symbol);

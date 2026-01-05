@@ -70,3 +70,14 @@ model ExchangeRate {
   rate      Float
   updatedAt DateTime @updatedAt
 }
+
+model ApiUsage {
+  id           String   @id @default(cuid())
+  provider     String   // "YAHOO", "ALPHA", "FINNHUB"
+  dateKey      String   // "YYYY-MM-DD" for easy aggregation
+  successCount Int      @default(0)
+  errorCount   Int      @default(0)
+  lastUpdated  DateTime @updatedAt
+  
+  @@unique([provider, dateKey])
+}
